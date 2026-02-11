@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "GrafosAI-Autofill (Background Runner)",
+  "version": "2.6.0",
+  "description": "Enterprise-grade form automation with security hardening - Google Sheets integration, macros, and XPath picker",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "clipboardRead"
+  ],
+  "host_permissions": [
+    "https://docs.google.com/*",
+    "https://*.googleusercontent.com/*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  }
+}
