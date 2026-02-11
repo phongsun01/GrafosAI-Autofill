@@ -40,7 +40,26 @@ echo [3/3] Dang day code len server (git push)...
 git push
 
 echo.
-echo === HOAN THANH ===
+echo === HOAN THANH SYNC ===
+echo.
+
+:: 4. Hoi ve viec tao Tag (Version)
+set /p "CREATE_TAG=Ban co muon tao Tag (version) cho ban nay khong? (y/n): "
+if /i "%CREATE_TAG%"=="y" (
+    set /p "TAG_NAME=Nhap ten Tag (VD: v2.6.0): "
+    if not "!TAG_NAME!"=="" (
+        set /p "TAG_MSG=Nhap mo ta cho Tag: "
+        echo Dang tao Tag !TAG_NAME!...
+        git tag -a !TAG_NAME! -m "!TAG_MSG!"
+        git push origin !TAG_NAME!
+        echo === DA TAO TAG !TAG_NAME! ===
+    ) else (
+        echo [Bỏ qua] Khong nhap ten Tag.
+    )
+)
+
+echo.
+echo === TAT CA DA HOAN THANH ===
 pause
 ```
 
