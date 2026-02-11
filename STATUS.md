@@ -1,7 +1,7 @@
 # Project Status: GrafosAI-Autofill - Development Status
 
-## 🎯 Current Version: 2.5.0 (Security Hardening Release)
-**Release Date:** 2026-02-10
+## 🎯 Current Version: 2.6.0 (Project Renaming & Unification)
+**Release Date:** 2026-02-11
 
 ### ✅ What's New in v2.5.0
 - **9 Security Fixes** across 3 severity levels (High/Medium/Low)

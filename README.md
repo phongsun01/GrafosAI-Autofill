@@ -1,6 +1,6 @@
 # GrafosAI-Autofill (Background Runner)
 
-**Version:** 5.6  
+**Version:** 2.6.0  
 **Manifest:** V3  
 
 ## Giới thiệu
