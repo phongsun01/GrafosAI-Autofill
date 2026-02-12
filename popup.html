@@ -412,6 +412,7 @@
   <script src="papaparse.min.js"></script>
   <script src="config.js"></script>
   <script src="security-utils.js"></script>
+  <script src="ai-engine.js"></script>
   <script type="module" src="popup-logic.js"></script>
   <script type="module" src="popup.js"></script>
 </head>
@@ -422,8 +423,9 @@
   <div class="tabs">
     <div class="tab-btn active" id="tabRun">Run ⚡</div>
     <div class="tab-btn" id="tabMacros">Macros 📦</div>
-    <div class="tab-btn" id="tabTools">Tools 🛠️</div>
-    <div class="tab-btn" id="tabConfig">Config</div>
+    <div class="tab-btn" id="tabTools" data-target="viewTools">Tools 🛠️</div>
+    <div class="tab-btn" id="tabAI" data-target="viewAI">AI 🤖</div>
+    <div class="tab-btn" id="tabConfig" data-target="viewConfig">Config ⚙️</div>
   </div>
 
   <div id="viewRun" class="tab-content active">
@@ -564,11 +566,60 @@
           <th>C (Cmd 2)</th>
         </tr>
         <tr>
-          <td>login</td>
-          <td>fill(...)</td>
-          <td>click(...)</td>
-        </tr>
       </table>
+    </div>
+  </div>
+
+  <!-- Tab 5: AI Form Detection -->
+  <div id="viewAI" class="tab-content">
+    <div class="group-box">
+      <div class="group-title">🤖 AI XPath Generator</div>
+
+      <div class="input-group">
+        <label>Gemini API Key:</label>
+        <input type="password" id="txtAiApiKey" placeholder="Paste your API Key here">
+      </div>
+
+      <div class="input-group">
+        <label>Prompt Sheet GID:</label>
+        <input type="text" id="txtAiGid" placeholder="e.g. 123456">
+        <button id="btnTestAi" class="btn-secondary">Test Connection</button>
+      </div>
+
+      <div class="input-group">
+        <label>Form Type:</label>
+        <select id="selAiTrigger">
+          <option value="login">Login Form</option>
+          <option value="signup">Register/Signup</option>
+          <option value="contact">Contact/Support</option>
+          <option value="checkout">Checkout/Purchase</option>
+          <option value="custom">Custom (All Fields)</option>
+        </select>
+      </div>
+
+      <button id="btnAiScan" class="btn-primary full-width">🔍 Scan Form & Generate XPaths</button>
+
+      <div id="aiResults" style="display:none; margin-top:10px; border-top: 1px solid #eee; padding-top: 10px;">
+        <label>Generated XPaths:</label>
+        <textarea id="txtAiOutput" rows="8" readonly
+          style="width:100%; font-family: monospace; font-size: 11px;"></textarea>
+        <div class="btn-row" style="margin-top: 5px;">
+          <button id="btnCopyAi" class="btn-secondary">Copy All</button>
+          <!-- Future: <button id="btnPasteSheet" class="btn-secondary">Paste to Sheet</button> -->
+        </div>
+      </div>
+
+      <div id="aiStatus" class="status-bar" style="display:none; margin-top: 5px;">
+        <span id="aiStatusText">Ready</span>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <strong>Setup:</strong><br>
+      1. Get free API Key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI
+        Studio</a>.<br>
+      2. Create "AI_Prompts" Sheet (A=Trigger, B=Prompt).<br>
+      3. Enter GID & API Key above.
     </div>
   </div>
 

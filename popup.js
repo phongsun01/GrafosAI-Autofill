@@ -183,6 +183,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.tabs.run.onclick = () => PopupUI.switchTab('run');
     dom.tabs.macros.onclick = () => { PopupUI.switchTab('macros'); PopupUI.renderMacrosTab(); };
     dom.tabs.config.onclick = () => PopupUI.switchTab('config');
+    dom.tabs.tools.onclick = () => PopupUI.switchTab('tools');
+    dom.tabs.ai.onclick = () => PopupUI.switchTab('ai');
 
     // Sub-tab event listeners
     if (dom.subTabs.vars) dom.subTabs.vars.onclick = () => PopupUI.switchSubTab('vars');
@@ -416,4 +418,84 @@ document.addEventListener('DOMContentLoaded', async () => {
         await navigator.clipboard.writeText(json);
         PopupUI.showToast(`📋 Copied ${Object.keys(macros).length} macros to clipboard!`, 'success');
     };
+
+    // --- AI TAB HANDLERS ---
+    dom.btn.testAi.onclick = async () => {
+        const apiKey = dom.input.aiApiKey.value.trim();
+        const gid = dom.input.aiGid.value.trim();
+
+        if (!apiKey) return PopupUI.showToast("Cần nhập API Key!", 'error');
+        if (!gid) return PopupUI.showToast("Cần nhập Sheet GID!", 'error');
+
+        if (DataManager.appData) {
+            DataManager.appData.aiConfig = { apiKey, gid };
+            await DataManager.save();
+        }
+
+        try {
+            PopupUI.updateAiStatus("Checking...", "blue");
+            PopupUI.showToast("Connection Test: OK (Saved)", 'success');
+            PopupUI.updateAiStatus("Ready", "#666");
+        } catch (e) {
+            PopupUI.showToast("Connection Failed: " + e.message, 'error');
+            PopupUI.updateAiStatus("Error", "red");
+        }
+    };
+
+    dom.btn.aiScan.onclick = async () => {
+        const apiKey = dom.input.aiApiKey.value.trim();
+        const gid = dom.input.aiGid.value.trim();
+        const trigger = dom.input.aiTrigger.value;
+
+        if (!apiKey || !gid) return PopupUI.showToast("Thiếu cấu hình AI!", 'error');
+
+        PopupUI.updateAiStatus("Scanning & Generating...", "blue");
+
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) return;
+
+        chrome.tabs.sendMessage(tab.id, { action: "AI_SCAN" }, async (response) => {
+            if (response && response.success) {
+                try {
+                    if (!window.AIEngine) throw new Error("AIEngine module not loaded");
+
+                    PopupUI.updateAiStatus("Fetching Prompts...", "blue");
+                    const prompts = await window.AIEngine.fetchPrompts(gid);
+
+                    PopupUI.updateAiStatus("AI Thinking...", "purple");
+                    const promptTemplate = prompts.find(p => p.trigger === trigger)?.prompt || prompts[0]?.prompt;
+
+                    if (!promptTemplate) throw new Error("No prompt found for trigger: " + trigger);
+
+                    const xpaths = await window.AIEngine.generateXPath(response.formHTML, promptTemplate, apiKey);
+
+                    dom.input.aiOutput.value = JSON.stringify(xpaths, null, 2);
+                    dom.div.aiResults.style.display = 'block';
+                    PopupUI.updateAiStatus("Done!", "green");
+
+                } catch (e) {
+                    PopupUI.showToast("AI Error: " + e.message, 'error');
+                    PopupUI.updateAiStatus("Failed", "red");
+                    console.error(e);
+                }
+            } else {
+                PopupUI.showToast("Scan Failed: " + (response ? response.error : "Unknown"), 'error');
+                PopupUI.updateAiStatus("Scan Failed", "red");
+            }
+        });
+    };
+
+    dom.btn.copyAi.onclick = () => {
+        const text = dom.input.aiOutput.value;
+        if (text) {
+            navigator.clipboard.writeText(text);
+            PopupUI.showToast("Copied to clipboard!", 'success');
+        }
+    };
+
+    // Load AI Config
+    if (DataManager.appData && DataManager.appData.aiConfig) {
+        dom.input.aiApiKey.value = DataManager.appData.aiConfig.apiKey || "";
+        dom.input.aiGid.value = DataManager.appData.aiConfig.gid || "";
+    }
 });

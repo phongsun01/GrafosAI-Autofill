@@ -49,6 +49,23 @@ if (!window.AutoFillPro.isLoaded || window.AutoFillPro.runtimeId !== currentRunt
         }
         if (request.action === "UNPAUSE") { return true; }
 
+        if (request.action === "AI_SCAN") {
+            try {
+                const formHTML = window.ContentUtils.scanForm();
+                const inputs = JSON.parse(formHTML);
+
+                if (inputs.length === 0) {
+                    sendResponse({ success: false, error: "No inputs found on page" });
+                } else {
+                    sendResponse({ success: true, formHTML: formHTML });
+                }
+            } catch (e) {
+                console.error("[Content] Scan failed:", e);
+                sendResponse({ success: false, error: e.message });
+            }
+            return true;
+        }
+
         if (request.action === "fill_single_row") {
             AFP.stopRequested = false;
             AFP.isRunning = true;

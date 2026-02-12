@@ -412,4 +412,57 @@ window.ContentUtils = {
         }
         return true;
     },
+    /**
+     * Scan page for form inputs and return simplified JSON structure
+     * @returns {string} JSON string of form data
+     */
+    scanForm: function () {
+        const selector = 'input:not([type="hidden"]), select, textarea, button[type="submit"]';
+        const elements = Array.from(document.querySelectorAll(selector));
+
+        // Filter out invisible elements
+        const visibleElements = elements.filter(el => {
+            return this.isTrulyVisible(el);
+        });
+
+        const formData = visibleElements.map(el => {
+            return {
+                tag: el.tagName.toLowerCase(),
+                type: el.type || '',
+                id: el.id || '',
+                name: el.name || '',
+                placeholder: el.placeholder || '',
+                "aria-label": el.getAttribute('aria-label') || '',
+                label: this.getNearestLabel(el),
+                // XPath is generated later, but we need enough info to identify it
+            };
+        });
+
+        return JSON.stringify(formData, null, 2);
+    },
+
+    /**
+     * Find the most likely label for an input element
+     * @param {HTMLElement} el 
+     * @returns {string} Label text
+     */
+    getNearestLabel: function (el) {
+        // 1. Check parent <label>
+        const parentLabel = el.closest('label');
+        if (parentLabel) return parentLabel.innerText.trim();
+
+        // 2. Check <label for="id">
+        if (el.id) {
+            const forLabel = document.querySelector(`label[for="${el.id}"]`);
+            if (forLabel) return forLabel.innerText.trim();
+        }
+
+        // 3. Check preceding sibling (common in some layouts)
+        const prev = el.previousElementSibling;
+        if (prev && (prev.tagName === 'LABEL' || prev.tagName === 'SPAN')) {
+            return prev.innerText.trim();
+        }
+
+        return '';
+    },
 };

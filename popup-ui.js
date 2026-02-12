@@ -9,8 +9,8 @@ export const PopupUI = {
     initDOM: function () {
         const getEl = (id) => document.getElementById(id);
         this.dom = {
-            tabs: { run: getEl('tabRun'), macros: getEl('tabMacros'), config: getEl('tabConfig'), tools: getEl('tabTools') },
-            views: { run: getEl('viewRun'), macros: getEl('viewMacros'), config: getEl('viewConfig'), tools: getEl('viewTools') },
+            tabs: { run: getEl('tabRun'), macros: getEl('tabMacros'), config: getEl('tabConfig'), tools: getEl('tabTools'), ai: getEl('tabAI') },
+            views: { run: getEl('viewRun'), macros: getEl('viewMacros'), config: getEl('viewConfig'), tools: getEl('viewTools'), ai: getEl('viewAI') },
             mode: {
                 radioSingle: document.querySelector('input[name="runMode"][value="single"]'),
                 radioBatch: document.querySelector('input[name="runMode"][value="batch"]'),
@@ -28,7 +28,8 @@ export const PopupUI = {
                 addProfile: getEl('btnAddProfile'), addProcess: getEl('btnAddProcess'),
                 startPicker: getEl('btnStartPicker'), stopPicker: getEl('btnStopPicker'), copyXPath: getEl('btnCopyXPath'),
                 export: getEl('btnExport'), import: getEl('btnImport'), clear: getEl('btnClearAll'),
-                loadMacros: getEl('btnLoadMacros') // [UPDATED]
+                loadMacros: getEl('btnLoadMacros'), // [UPDATED]
+                testAi: getEl('btnTestAi'), aiScan: getEl('btnAiScan'), copyAi: getEl('btnCopyAi') // [NEW]
             },
             input: {
                 profile: getEl('runProfileSelect'), process: getEl('runProcessSelect'), range: getEl('txtRange'),
@@ -38,7 +39,11 @@ export const PopupUI = {
                 profileList: getEl('profileList'), processList: getEl('processList'), processBox: getEl('processBox'),
                 currentXPath: getEl('txtCurrentXPath'),
                 searchBatch: getEl('txtSearchBatch'),
-                macroLink: getEl('txtMacroSheetLink'), macroGid: getEl('txtMacroGid') // [UPDATED]
+                macroLink: getEl('txtMacroSheetLink'), macroGid: getEl('txtMacroGid'), // [UPDATED]
+                aiApiKey: getEl('txtAiApiKey'), aiGid: getEl('txtAiGid'), aiTrigger: getEl('selAiTrigger'), aiOutput: getEl('txtAiOutput') // [NEW]
+            },
+            div: { // [NEW]
+                aiResults: getEl('aiResults')
             },
             status: {
                 msg: getEl('statusMsg'), msgBatch: getEl('statusMsgBatch'),
