@@ -1,6 +1,6 @@
 # GrafosAI-Autofill (Background Runner)
 
-**Version:** 2.6.0  
+**Version:** 2.6.4  
 **Manifest:** V3  
 
 ## Giới thiệu
@@ -34,6 +34,10 @@ Extension Chrome giúp tự động điền biểu mẫu (Form Filling) dựa tr
 
 ## Tính năng chính
 - **Smart Filling**: Hỗ trợ điền Input, Select, Checkbox, Radio.
+- **AI XPath Generator**: Tự động tạo XPath dựa trên HTML trang web (Gemini 1.5 Flash/Pro).
+- **Macro System**: Lưu chuỗi lệnh phức tạp thành Template tái sử dụng.
+- **Security Module**: Bảo vệ dữ liệu nhạy cảm, mã hóa và ghi log an toàn.
+- **Merged UI**: Giao diện tab "Run" thống nhất cho cả Single và Batch mode.
 - **Commands**: Hỗ trợ lệnh trong Sheet như `Click(xpath)`, `Delay(ms)`, `Pause`.
 - **Batch Processing**: Xử lý hàng loạt dòng dữ liệu liên tục.
 - **Dynamic Variables**: Trích xuất dữ liệu từ web và dùng lại cho các bước sau.
