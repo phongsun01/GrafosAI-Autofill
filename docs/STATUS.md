@@ -49,26 +49,27 @@ This version combines the stable execution core of V1.5 with the advanced featur
 | Data Extraction Mode (`extract(xpath, {var:name})`) | ✅ Done |
 | Error Handling Rules (`config(error:skip, retry:3)`) | ✅ Done |
 | Variable System (`${varName}` substitution) | ✅ Done |
+| **Macro/Template System** (Reusable sequences) | ✅ Done |
+| **Security Module** (Hardening, Logging, Redaction) | ✅ Done |
+| **Tab Merging** (Unified Run & Batch tabs) | ✅ Done |
+| **AI XPath Generator** (Gemini integration, Fallback) | ✅ Done |
 
 ---
 
 ### Pending Tasks (Roadmap)
 
 #### 🔴 Cao Priority
-- [ ] **Macro/Template System:** Save command sequences thành reusable macros (VD: `macro:login`).
 - [ ] **Schedule & Triggers:** Auto-run profiles theo schedule (cron) hoặc trigger khi URL match pattern.
-- [ ] **Password Security Module:** Implement SECURITY_DESIGN.md (Auto-detect, Mask, Zero-storage).
+- [ ] **Data Encryption:** Enhance security module with localized encryption for saved datasets.
 
 #### 🟡 Trung Priority
 - [ ] **Performance Mode:** Parallel processing (max 3 concurrent tabs), reduce delays.
 - [ ] **Capture & Assert:** Command `capture(xpath, expected_value)` để validate results.
 - [ ] **Multi-Sheet Support:** Load multiple sheets, join data với syntax `{SheetB.columnC}`.
 - [ ] **Analytics Dashboard:** Tab statistics (success rate, avg time, failed XPaths).
-- [ ] **Persistence for Variables:** Survive extension reload (optional sync).
 
 #### 🟢 Thấp Priority
 - [ ] **Cloud Sync:** Backup/restore profiles qua Google Drive.
-- [ ] **AI-Assisted XPath:** Suggest alternatives khi fail, auto-fix common issues.
 - [ ] **Diff Tool:** Compare 2 profiles/processes để merge changes.
 - [ ] **Webhook Integration:** POST results tới external APIs khi batch complete.
 - [ ] **Mobile App Companion:** Remote monitor long-running jobs.
