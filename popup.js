@@ -469,6 +469,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         };
 
+        // 3. Auto-save Form Type
+        if (dom.input.aiTrigger) {
+            dom.input.aiTrigger.onchange = async () => {
+                const val = dom.input.aiTrigger.value;
+                if (DataManager.appData) {
+                    DataManager.appData.lastTrigger = val;
+                    await DataManager.save();
+                    console.log("[AI] Trigger saved:", val);
+                }
+            };
+        }
+
         dom.btn.testAi.onclick = async () => {
             const apiKey = dom.input.aiApiKey.value.trim();
             const gid = dom.input.aiGid.value.trim();
@@ -522,6 +534,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!tab) return;
 
             chrome.tabs.sendMessage(tab.id, { action: "AI_SCAN" }, async (response) => {
+                const lastError = chrome.runtime.lastError;
+                if (lastError) {
+                    console.error("Msg Error:", lastError);
+                    PopupUI.showToast("Error: Content script not loaded. Reload page!", 'error');
+                    PopupUI.updateAiStatus("Conn. Error", "red");
+                    return;
+                }
+
                 if (response && response.success) {
                     try {
                         if (!window.AIEngine) throw new Error("AIEngine module not loaded");
@@ -542,12 +562,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     } catch (e) {
                         PopupUI.showToast("AI Error: " + e.message, 'error');
-                        PopupUI.updateAiStatus("Failed", "red");
+                        PopupUI.updateAiStatus("AI Error", "red");
                         console.error(e);
                     }
                 } else {
-                    PopupUI.showToast("Scan Failed: " + (response ? response.error : "Unknown"), 'error');
-                    PopupUI.updateAiStatus("Scan Failed", "red");
+                    const err = response ? response.error : "Unknown Error";
+                    PopupUI.showToast("Scan Failed: " + err, 'error');
+                    PopupUI.updateAiStatus(err.substring(0, 15) + "...", "red");
                 }
             });
         };

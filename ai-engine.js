@@ -84,6 +84,55 @@ window.AIEngine = {
     },
 
     /**
+     * Dynamically find the best available model for the API Key
+     * @param {string} apiKey 
+     * @returns {Promise<string>} Model name (e.g. 'models/gemini-1.5-flash')
+     */
+    async discoverBestModel(apiKey) {
+        console.log("[AI] Discovering available models...");
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+            if (!response.ok) {
+                // If ListModels fails, fall back to a safe default
+                console.warn("[AI] ListModels failed, using default.");
+                return "gemini-1.5-flash";
+            }
+
+            const data = await response.json();
+            if (!data.models) return "gemini-1.5-flash"; // No models returned?
+
+            // Filter for models that support generateContent
+            const candidates = data.models.filter(m =>
+                m.supportedGenerationMethods &&
+                m.supportedGenerationMethods.includes("generateContent")
+            );
+
+            // Sort logic: Prefer flash > pro > 1.5 > 1.0
+            const preferredOrder = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro", "gemini-1.0-pro"];
+
+            for (const pref of preferredOrder) {
+                const found = candidates.find(m => m.name.endsWith(pref));
+                if (found) {
+                    console.log(`[AI] Selected best model: ${found.name}`);
+                    return found.name.replace("models/", ""); // API expects just name usually, or models/name
+                }
+            }
+
+            // Fallback to the first available candidate
+            if (candidates.length > 0) {
+                console.log(`[AI] Selected fallback model: ${candidates[0].name}`);
+                return candidates[0].name.replace("models/", "");
+            }
+
+            return "gemini-1.5-flash"; // Absolute fallback
+
+        } catch (e) {
+            console.error("[AI] Discovery error:", e);
+            return "gemini-1.5-flash";
+        }
+    },
+
+    /**
      * Generate XPath using Gemini API
      * @param {string} html - Form HTML
      * @param {string} prompt - Prompt template
@@ -93,11 +142,24 @@ window.AIEngine = {
     async generateXPath(html, prompt, apiKey) {
         if (!apiKey) throw new Error("API Key is required");
 
-        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+        const safeKey = apiKey.trim();
+
+        // 1. Discover valid model
+        let modelName = await this.discoverBestModel(safeKey);
+        // Ensure prefix consistency
+        if (!modelName.startsWith("models/") && !modelName.startsWith("tunedModels/")) {
+            // actually the API endpoint format is models/{model}:generateContent
+            // so if discovery returns 'models/gemini-pro', we extract 'gemini-pro'
+            modelName = modelName.replace("models/", "");
+        }
+
+        console.log(`[AI] Using Model: ${modelName}`);
+
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
         const fullPrompt = `${prompt}\n\nTarget Form HTML:\n${html}\n\nReturn JSON format: [{"label": "...", "xpath": "..."}]`;
 
         try {
-            const response = await fetch(`${API_URL}?key=${apiKey}`, {
+            const response = await fetch(`${API_URL}?key=${safeKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -111,14 +173,19 @@ window.AIEngine = {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error?.message || "Gemini API Error");
+                const msg = errorData.error?.message || "Unknown API Error";
+                throw new Error(`${modelName} failed: ${msg}`);
             }
 
             const data = await response.json();
+            if (!data.candidates || !data.candidates[0].content) {
+                throw new Error("Invalid API response format");
+            }
             const text = data.candidates[0].content.parts[0].text;
             return JSON.parse(text);
+
         } catch (error) {
-            console.error("[AI] Generation failed:", error);
+            console.error(`[AI] Error with ${modelName}:`, error);
             throw error;
         }
     }

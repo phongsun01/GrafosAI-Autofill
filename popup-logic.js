@@ -59,6 +59,12 @@ export const PopupLogic = {
                 if (dom.input.macroGid) dom.input.macroGid.value = DataManager.appData.macroSheetConfig.gid || "";
             }
 
+            // Restore AI Form Type
+            if (DataManager.appData.lastTrigger) {
+                const sel = document.getElementById('selAiTrigger');
+                if (sel) sel.value = DataManager.appData.lastTrigger;
+            }
+
             // Restore Macros Table
             if (DataManager.appData.macros) {
                 const mCount = Object.keys(DataManager.appData.macros).length;
