@@ -10,24 +10,85 @@
         };
     }
 
+    // --- OVERLAY HELPER ---
+    function createOverlay() {
+        let overlay = document.getElementById('autofill-picker-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'autofill-picker-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                pointer-events: none;
+                z-index: 2147483647;
+                background: rgba(16, 185, 129, 0.1);
+                border: 2px solid #10b981;
+                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+                transition: all 0.05s ease;
+                display: none;
+            `;
+            // Append to documentElement to avoid Body transform issues
+            document.documentElement.appendChild(overlay);
+        }
+        return overlay;
+    }
+
+    function moveOverlay(target) {
+        const overlay = createOverlay();
+        if (!target || target === document.body || target === document.documentElement) {
+            overlay.style.display = 'none';
+            return;
+        }
+        const rect = target.getBoundingClientRect();
+
+        // Safety check for invisible elements
+        if (rect.width === 0 || rect.height === 0) {
+            overlay.style.display = 'none';
+            return;
+        }
+
+        overlay.style.width = rect.width + 'px';
+        overlay.style.height = rect.height + 'px';
+        overlay.style.top = rect.top + 'px';
+        overlay.style.left = rect.left + 'px';
+        overlay.style.display = 'block';
+
+        // FALLBACK: Also add a subtle outline to the element itself, just in case overlay is z-indexed out
+        // valid only if we can write to style
+        if (target.style) {
+            // Only save if not already saved!
+            if (typeof target.dataset.aoOriginalOutline === 'undefined') {
+                target.dataset.aoOriginalOutline = target.style.outline || '';
+            }
+            target.style.outline = '2px solid rgba(16, 185, 129, 0.8)';
+        }
+    }
+
+    function clearFallback(target) {
+        if (!target) return;
+        if (target.dataset && typeof target.dataset.aoOriginalOutline !== 'undefined') {
+            target.style.outline = target.dataset.aoOriginalOutline;
+            delete target.dataset.aoOriginalOutline;
+        }
+    }
+
     // --- XPATH PICKER LOGIC ---
 
     window.onPickerMouseMove = function (e) {
         if (!window.AutoFillPro.xpathPickerMode) return;
-        e.stopPropagation();
-        e.preventDefault();
 
         const target = e.target;
-        if (!target || target === document.body || target === document.documentElement) return;
+        if (target.id === 'autofill-picker-overlay') return;
 
-        // Restore previous element
+        // Restore previous element fallback
         if (window.AutoFillPro.xpathPreviewElement && window.AutoFillPro.xpathPreviewElement !== target) {
-            restoreElementStyle(window.AutoFillPro.xpathPreviewElement);
+            clearFallback(window.AutoFillPro.xpathPreviewElement);
         }
 
-        // Highlight current element
         window.AutoFillPro.xpathPreviewElement = target;
-        highlightElement(target);
+        moveOverlay(target);
+
+        // Debug logger (throttled visually)
+        // console.log('[Picker] Hover:', target.tagName); 
     };
 
     window.onPickerClick = function (e) {
@@ -36,7 +97,8 @@
         e.preventDefault();
 
         const target = e.target;
-        if (!target || target === document.body || target === document.documentElement) return;
+        // Relaxed check: allow mostly anything except root document
+        if (!target || target === document.documentElement) return;
 
         const xpath = window.generateXPath(target);
         if (xpath) {
@@ -49,31 +111,27 @@
     };
 
     window.onPickerKeydown = function (e) {
-        if (e.key === 'Escape') {
-            e.stopPropagation();
+        if (!window.AutoFillPro.xpathPickerMode) return;
+        if (e.key === 'Escape' || e.code === 'Escape') {
             e.preventDefault();
+            e.stopPropagation();
             window.stopXPathPicker();
-            window.showOnPageToast('❌ Picker Cancelled');
+            window.showOnPageToast('⏹️ Cancelled Picker');
         }
     };
 
-    function highlightElement(element) {
-        if (!element || !element.style) return;
-        element.dataset.originalOutline = element.style.outline || '';
-        element.dataset.originalBackground = element.style.backgroundColor || '';
-        element.style.outline = '2px solid #00ff00';
-        element.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
-    }
-
-    function restoreElementStyle(element) {
-        if (!element || !element.style) return;
-        element.style.outline = element.dataset.originalOutline || '';
-        element.style.backgroundColor = element.dataset.originalBackground || '';
-        delete element.dataset.originalOutline;
-        delete element.dataset.originalBackground;
-    }
-
     function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(err => {
+                console.error('Clipboard API failed', err);
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -190,6 +248,10 @@
         document.addEventListener('click', window.onPickerClick, true);
         document.addEventListener('keydown', window.onPickerKeydown, true);
 
+        document.addEventListener('keydown', window.onPickerKeydown, true);
+
+        window.focus(); // Ensure window has focus for events and clipboard
+        createOverlay(); // Init overlay
         console.log('[AutoFill Pro] XPath Picker: ACTIVATED');
         window.showOnPageToast('🎯 Picker Active: Click to Copy');
     };
@@ -204,10 +266,15 @@
         document.removeEventListener('click', window.onPickerClick, true);
         document.removeEventListener('keydown', window.onPickerKeydown, true);
 
+        const overlay = document.getElementById('autofill-picker-overlay');
+        if (overlay) overlay.remove();
+
+        // [FIX] Clear fallback outline from the last highlighted element
         if (window.AutoFillPro.xpathPreviewElement) {
-            restoreElementStyle(window.AutoFillPro.xpathPreviewElement);
+            clearFallback(window.AutoFillPro.xpathPreviewElement);
             window.AutoFillPro.xpathPreviewElement = null;
         }
+
         console.log('[AutoFill Pro] XPath Picker: DEACTIVATED');
     };
 

@@ -17,18 +17,20 @@
         "content-utils.js",
         "content-commands.js",
         "content.js",
-        "ai-engine.js"
+        "ai-engine.js",
+        "picker.js"
       ]
     }
   ],
   "name": "GrafosAI-Autofill (Background Runner)",
-  "version": "2.6.0",
+  "version": "2.6.2",
   "description": "Enterprise-grade form automation with security hardening - Google Sheets integration, macros, and XPath picker",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
-    "clipboardRead"
+    "clipboardRead",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "https://docs.google.com/*",

@@ -12,10 +12,14 @@ export const PopupLogic = {
     // --- INITIALIZATION ---
     init: async function () {
         try {
+            console.log("PopupLogic: Initializing...");
             await DataManager.load();
+            if (!DataManager.appData) throw new Error("App Data is null after load");
+            console.log("PopupLogic: Data Loaded", DataManager.appData);
             this.restoreState();
         } catch (e) {
-            PopupUI.showToast("Init Error: " + e.message, 'error');
+            console.error("Init failed:", e);
+            PopupUI.showToast("Init Data Error: " + e.message, 'error');
         }
     },
 

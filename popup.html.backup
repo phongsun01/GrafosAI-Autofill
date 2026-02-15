@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Sheet Automator Pro</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-body: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #1e293b;
+      --text-sub: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    body {
+      width: 400px;
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    /* --- TABS --- */
+    .tabs {
+      display: flex;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-sub);
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      background: #f1f5f9;
+      color: var(--primary);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: #fff;
+    }
+
+    /* --- LAYOUT --- */
+    .tab-content {
+      display: none;
+      padding: 12px;
+      animation: fadeIn 0.2s;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(2px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .group-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .group-title {
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--text-main);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* --- FORM ELEMENTS --- */
+    input,
+    select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      font-size: 13px;
+      transition: border 0.2s;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--primary);
+    }
+
+    /* --- BUTTONS --- */
+    .btn-main {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      background: var(--primary);
+      transition: background 0.2s;
+      margin-top: 4px;
+    }
+
+    .btn-main:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-wrapper {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .btn-pause {
+      background: var(--warning);
+      display: none;
+      flex: 1;
+    }
+
+    .btn-stop {
+      background: var(--danger);
+      display: none;
+      width: 80px;
+    }
+
+    /* --- ACTION BUTTONS (Fix màu nút) --- */
+    .btn-icon {
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+      margin-left: 2px;
+    }
+
+    .btn-up,
+    .btn-down {
+      background: #94a3b8;
+    }
+
+    .btn-up:hover,
+    .btn-down:hover {
+      background: #64748b;
+    }
+
+    .btn-edit {
+      background: var(--warning);
+    }
+
+    .btn-edit:hover {
+      background: #d97706;
+    }
+
+    .btn-del {
+      background: var(--danger);
+    }
+
+    .btn-del:hover {
+      background: #dc2626;
+    }
+
+    .btn-add {
+      background: var(--success);
+      width: 36px;
+      height: 34px;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    /* --- LIST ITEMS --- */
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      background: #fff;
+      border: 1px solid var(--border);
+      margin-bottom: 4px;
+      border-radius: var(--radius);
+    }
+
+    .list-item.selected {
+      border-left: 3px solid var(--primary);
+      background: #eff6ff;
+    }
+
+    .item-actions {
+      display: flex;
+    }
+
+    /* --- PROGRESS BAR --- */
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+      display: none;
+      /* Hiện khi chạy */
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--success);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* --- TOAST NOTIFICATION --- */
+    #toast-container {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      font-size: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.3s ease-out;
+      min-width: 200px;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast.success {
+      background: var(--success);
+    }
+
+    .toast.error {
+      background: var(--danger);
+    }
+
+    .toast.info {
+      background: var(--primary);
+    }
+
+    .toast.warning {
+      background: var(--warning);
+    }
+
+    /* --- TABLE & HELPERS --- */
+    .info-bar {
+      font-size: 11px;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 6px 10px;
+      border-radius: var(--radius);
+      display: flex;
+      justify-content: space-between;
+      border: 1px solid #bae6fd;
+      margin-bottom: 8px;
+    }
+
+    .col-3-flex {
+      display: flex;
+      gap: 5px;
+    }
+
+    .col-3-flex input {
+      flex: 1;
+    }
+
+    .batch-container {
+      height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      background: #fff;
+      margin-top: 5px;
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #f1f5f9;
+      text-align: left;
+      padding: 6px;
+      font-weight: 600;
+      border-bottom: 1px solid #cbd5e1;
+    }
+
+    td {
+      padding: 6px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .note-box {
+      font-size: 11px;
+      color: #64748b;
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: var(--radius);
+      margin-top: 10px;
+      border: 1px dashed #cbd5e1;
+      line-height: 1.4;
+    }
+
+    /* --- XPATH TAB Styles --- */
+    .xpath-status {
+      padding: 8px;
+      background: #eff6ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .guide-steps {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .step {
+      margin-bottom: 6px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .step:before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: #10b981;
+      font-weight: bold;
+    }
+
+    .xpath-examples {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 6px;
+      line-height: 1.4;
+      border: 1px dashed #cbd5e1;
+    }
+  </style>
+
+  <script src="papaparse.min.js"></script>
+  <script src="config.js"></script>
+  <script type="module" src="popup.js"></script>
+</head>
+
+<body>
+  <div id="toast-container"></div>
+
+  <div class="tabs">
+    <div class="tab-btn active" id="tabRun">Auto Fill</div>
+    <div class="tab-btn" id="tabBatch">Batch Run</div>
+    <div class="tab-btn" id="tabMacros">Macros 📦</div>
+    <div class="tab-btn" id="tabTools">Tools 🛠️</div>
+    <div class="tab-btn" id="tabConfig">Config</div>
+  </div>
+
+  <div id="viewRun" class="tab-content active">
+    <div class="group-box">
+      <label>1. Chọn Profile</label>
+      <select id="runProfileSelect"></select>
+      <label>2. Chọn Quy Trình</label>
+      <select id="runProcessSelect"></select>
+    </div>
+
+    <div class="group-box">
+      <div class="info-bar"><span>GID: <b id="lblGid">...</b></span><span>Tổng: <b id="lblTotalRows">...</b></span>
+      </div>
+      <label>Phạm vi dòng (Range):</label>
+      <input type="text" id="txtRange" value="3" placeholder="VD: 3, 5-10">
+
+      <div class="progress-track" id="progressTrack">
+        <div class="progress-fill" id="progressBar"></div>
+      </div>
+      <div id="statusMsg"
+        style="text-align:center; margin-top:8px; font-weight:600; font-size:12px; color:var(--text-sub);">Sẵn sàng
+      </div>
+
+      <div class="btn-wrapper">
+        <button id="btnRun" class="btn-main">CHẠY NGAY</button>
+        <button id="btnPause" class="btn-main btn-pause">⏸️ TẠM DỪNG</button>
+        <button id="btnStop" class="btn-main btn-stop">🛑 DỪNG</button>
+      </div>
+    </div>
+    <div id="noteAutofillContainer" class="note-box"></div>
+  </div>
+
+  <div id="viewBatch" class="tab-content">
+    <input type="text" id="txtSearchBatch" placeholder="🔍 Tìm kiếm dữ liệu...">
+    <div class="info-bar"><span>GID: <b id="lblBatchGid">...</b></span><span>Tổng: <b id="lblBatchTotal">...</b></span>
+    </div>
+    <div class="batch-container">
+      <table id="batchTable">
+        <thead>
+          <tr>
+            <th style="width:20px"><input type="checkbox" id="cbSelectAll"></th>
+            <th style="width:30px">#</th>
+            <th id="thCol1">Cột 1</th>
+            <th id="thCol2">Cột 2</th>
+          </tr>
+        </thead>
+        <tbody id="batchTableBody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
+      <span id="lblSelectedCount" style="font-weight:bold; color:var(--primary)">0 dòng chọn</span>
+    </div>
+
+    <div class="progress-track" id="progressTrackBatch">
+      <div class="progress-fill" id="progressBarBatch"></div>
+    </div>
+    <div id="statusMsgBatch" style="text-align:center; margin-top:5px; font-size:11px; font-weight:600;">Sẵn sàng</div>
+
+    <div class="btn-wrapper">
+      <button id="btnRunBatch" class="btn-main">CHẠY BATCH</button>
+      <button id="btnPauseBatch" class="btn-main btn-pause">⏸️ TẠM DỪNG</button>
+      <button id="btnStopBatch" class="btn-main btn-stop">🛑 DỪNG</button>
+    </div>
+
+    <div id="noteBatchContainer" class="note-box"></div>
+  </div>
+
+  <div id="viewMacros" class="tab-content">
+    <div class="group-box">
+      <div class="group-title">📦 Macro Templates</div>
+      <div class="info-bar">
+        <span>Total: <b id="lblMacroCount">0</b></span>
+      </div>
+      <div style="max-height:300px; overflow-y:auto; margin-top:10px;">
+        <table id="macrosTable" style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:8px; border-bottom:1px solid var(--border);">Name</th>
+              <th style="text-align:center; padding:8px; border-bottom:1px solid var(--border);">Commands</th>
+              <th style="width:60px; text-align:center; padding:8px; border-bottom:1px solid var(--border);">Action</th>
+            </tr>
+          </thead>
+          <tbody id="macrosTableBody"></tbody>
+        </table>
+      </div>
+      <div class="btn-wrapper" style="margin-top:15px;">
+        <button id="btnImportMacros" class="btn-main">📥 IMPORT JSON</button>
+        <button id="btnExportMacros" class="btn-main">📤 EXPORT JSON</button>
+      </div>
+    </div>
+    <div class="note-box">
+      <strong>📖 Hướng dẫn:</strong><br>
+      <strong>1. Import:</strong> Paste JSON định nghĩa macros<br>
+      <strong>2. Use:</strong> Trong Sheet header: <code>macro:login</code><br>
+      <strong>3. Params:</strong> <code>macro:fill({name})</code> → Lấy từ cột Sheet<br><br>
+      <strong>Example JSON:</strong>
+      <pre style="background:#f5f5f5; padding:8px; border-radius:4px; font-size:10px; overflow-x:auto;">
+{
+  "login": [
+    "click(//button[@id='login'])",
+    "fill(//input[@name='user'], {user})",
+    "fill(//input[@name='pass'], {pass})",
+    "click(//button[@type='submit'])",
+    "waitfor(//div[@class='dashboard'], 10)"
+  ]
+}</pre>
+    </div>
+  </div>
+
+  <div id="viewConfig" class="tab-content">
+    <div class="group-box">
+      <div class="group-title">1. Quản lý Profile
+        <div style="display: flex; gap:5px; width: 60%;">
+          <input type="text" id="newProfileName" placeholder="Tên mới..." style="margin-bottom:0">
+          <button id="btnAddProfile" class="btn-main btn-add">+</button>
+        </div>
+      </div>
+      <div id="profileList" style="max-height:120px; overflow-y:auto; margin-top:5px;"></div>
+    </div>
+
+    <div class="group-box" id="processBox" style="opacity:0.5; pointer-events:none;">
+      <div class="group-title">2. Quy trình: <span id="currentProfileName" style="color:var(--primary)">...</span></div>
+      <input type="text" id="newProcessName" placeholder="Tên quy trình">
+      <input type="text" id="newProcessLink" placeholder="Link Google Sheet...">
+      <div class="col-3-flex">
+        <input type="text" id="txtBatchCols" placeholder="Cột hiển thị (VD: B,D hoặc E-G)"
+          title="Các cột hiển thị ở tab Batch">
+        <input type="text" id="txtActiveCols" placeholder="Cột chạy (VD: A-C)" title="Để trống = Chạy hết">
+      </div>
+      <button id="btnAddProcess" class="btn-main">LƯU QUY TRÌNH</button>
+      <div id="processList" style="max-height:120px; overflow-y:auto; margin-top:8px;"></div>
+    </div>
+    <div id="noteConfigContainer" class="note-box"></div>
+  </div>
+
+  <div id="viewTools" class="tab-content">
+    <!-- Sub Nav -->
+    <div class="btn-wrapper" style="margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+      <button id="subTabVars" class="btn-main" style="background:#2563eb; font-size:11px; width:30%;">Variables</button>
+      <button id="subTabXPath" class="btn-main" style="background:#64748b; font-size:11px; width:30%;">XPath</button>
+      <button id="subTabBackup" class="btn-main" style="background:#64748b; font-size:11px; width:30%;">Backup</button>
+    </div>
+
+    <!-- VARIABLES SECTION -->
+    <div id="sectionVars">
+      <div class="info-bar">
+        <span>Active Vars: <b id="lblVarCount">0</b></span>
+        <button id="btnRefreshVars" class="btn-icon btn-edit" title="Refresh">↻</button>
+      </div>
+      <div class="batch-container" style="height: 200px;">
+        <table id="varsTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Value</th>
+              <th style="width:40px">Action</th>
+            </tr>
+          </thead>
+          <tbody id="varsTableBody"></tbody>
+        </table>
+      </div>
+      <div class="btn-wrapper">
+        <button id="btnClearVars" class="btn-main" style="background:var(--danger)">CLEAR ALL</button>
+        <button id="btnExportVars" class="btn-main">EXPORT JSON</button>
+      </div>
+      <div class="note-box" style="margin-top:10px;">
+        💡 Use <code>${varName}</code> in commands. Values are synced globally.
+      </div>
+    </div>
+
+    <!-- XPATH SECTION -->
+    <div id="sectionXPath" style="display:none">
+      <div class="group-box">
+        <div class="group-title">XPath Picker 🎯</div>
+        <div class="xpath-status" id="xpathStatus">
+          <span id="xpathMode">🚫 Chế độ tắt</span>
+          <span id="xpathCopied" style="display:none; color:var(--success); margin-left:10px;">✅ Đã copy!</span>
+        </div>
+        <div class="group-box" style="margin-top:8px; border:none; padding:0; box-shadow:none;">
+          <label>XPath hiện tại:</label>
+          <div style="display:flex; gap:5px;">
+            <input type="text" id="txtCurrentXPath" readonly placeholder="Hover & click element..."
+              style="margin-bottom:0">
+            <button id="btnCopyXPath" class="btn-main" style="width:60px; margin-top:0;">Copy</button>
+          </div>
+        </div>
+      </div>
+      <div class="group-box">
+        <button id="btnStartPicker" class="btn-main">🎯 BẮT ĐẦU CHỌN</button>
+        <button id="btnStopPicker" class="btn-main" style="background:var(--danger); display:none">⏹️ THOÁT</button>
+      </div>
+      <div class="group-box" style="margin-top:12px;">
+        <div class="group-title">📖 Hướng dẫn</div>
+        <div class="guide-steps">
+          <div class="step"><strong>1. Bật chế độ:</strong> Nhấn "BẮT ĐẦU CHỌN"</div>
+          <div class="step"><strong>2. Di chuột:</strong> Element sẽ có viền xanh lá</div>
+          <div class="step"><strong>3. Click:</strong> XPath tự động xuất hiện</div>
+        </div>
+      </div>
+      <div class="group-box" style="margin-top:10px;">
+        <div class="group-title">💡 Ví dụ XPath phổ biến</div>
+        <div class="xpath-examples">
+          <code>//input[@name='title']</code><br>
+          <code>//button[contains(text(),'Submit')]</code><br>
+          <code>//div[@class='price']</code><br>
+          <code>//a[contains(@href,'dashboard')]</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- BACKUP SECTION -->
+    <div id="sectionBackup" style="display:none">
+      <div class="group-box">
+        <div class="group-title">🔄 Backup & Restore</div>
+        <div class="info-bar">
+          <span>Profiles: <b id="lblProfileCount">0</b></span>
+          <span>Last backup: <b id="lblLastBackup">Never</b></span>
+        </div>
+        <div style="margin-top:10px; text-align:center;">
+          <button id="btnExport" class="btn-main" style="background:var(--success)">📤 EXPORT PROFILES</button>
+        </div>
+        <div style="margin-top:15px; border-top:1px dashed var(--border); padding-top:15px; text-align:center;">
+          <button id="btnImport" class="btn-main" style="background:var(--primary)">📥 IMPORT PROFILES</button>
+        </div>
+        <div style="margin-top:20px; text-align:right;">
+          <button id="btnClearAll"
+            style="background:transparent; border:1px solid var(--danger); color:var(--danger); padding:5px 10px; border-radius:4px; cursor:pointer; font-size:11px;">Clear
+            All Data</button>
+        </div>
+      </div>
+      <div class="note-box">
+        <strong>📖 Hướng dẫn sử dụng:</strong><br>
+        <strong>1. Export:</strong> Click 📤 → JSON tự động copy vào clipboard<br>
+        <strong>2. Lưu:</strong> Paste vào Notepad/Email/Google Drive<br>
+        <strong>3. Import:</strong> Copy JSON từ nơi lưu → Click 📥<br>
+        <strong>4. Xử lý trùng:</strong> Nếu có profile trùng ID → Chọn Ghi đè/Bỏ qua<br>
+        <em style="color:var(--text-sub); font-size:10px;">💡 Passwords đã được mask khi export. Import tự động merge
+          data.</em>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

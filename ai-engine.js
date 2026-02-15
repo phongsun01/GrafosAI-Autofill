@@ -1,3 +1,5 @@
+// ai-engine.js
+
 window.AIEngine = {
     /**
      * Initialize AI Engine
@@ -16,30 +18,59 @@ window.AIEngine = {
     async fetchPrompts(gid) {
         if (!gid) throw new Error("GID is required");
 
-        // Construct CSV export URL
-        // Format: https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}
-        // We need the SHEET_ID from config or user input. For now, assuming user provides full URL or we use a configured ID.
-        // IMPROVEMENT: Ideally, we use the same DataManager logic.
-
-        // Re-use DataManager if available, otherwise fetch directly
-        // Since ai-engine.js is a module, we can import likely, but let's keep it standalone-ish or use window.DataManager
-
         let csvUrl = "";
-        if (window.DataManager && window.DataManager.getSheetIds) {
-            const sheetId = window.DataManager.getSheetIds().spreadsheetId;
-            if (!sheetId) throw new Error("Setup Sheet ID in Config tab first");
-            csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-        } else {
-            throw new Error("DataManager not found");
+
+        // 1. Try to detect if 'gid' is actually a full URL
+        if (gid.startsWith("http")) {
+            try {
+                const m = gid.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                const g = gid.match(/[#&]gid=([0-9]+)/);
+                if (m) {
+                    const sheetId = m[1];
+                    const actualGid = g ? g[1] : "0";
+                    csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${actualGid}`;
+                }
+            } catch (e) { console.error("URL parsing error", e); }
+        }
+
+        // 2. If not a generic URL, try to build from DataManager (window.DataManager)
+        if (!csvUrl && window.DataManager) {
+            // Case A: DataManager has getSheetIds (from config)
+            if (window.DataManager.getSheetIds) {
+                const ids = window.DataManager.getSheetIds();
+                if (ids && ids.spreadsheetId) {
+                    csvUrl = `https://docs.google.com/spreadsheets/d/${ids.spreadsheetId}/export?format=csv&gid=${gid}`;
+                }
+            }
+            // Case B: DataManager has appData (fallback to macro config?)
+            if (!csvUrl && window.DataManager.appData && window.DataManager.appData.macroSheetConfig && window.DataManager.appData.macroSheetConfig.url) {
+                const url = window.DataManager.appData.macroSheetConfig.url;
+                const m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                if (m) {
+                    csvUrl = `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv&gid=${gid}`;
+                }
+            }
+        }
+
+        if (!csvUrl) {
+            // Final attempt: If the user provided a GID but we have no Sheet ID context
+            throw new Error("Cannot determine Spreadsheet ID. Please paste the FULL Google Sheet URL into the GID field.");
         }
 
         try {
             const response = await fetch(csvUrl);
-            if (!response.ok) throw new Error("Failed to fetch Sheet CSV");
+            if (!response.ok) {
+                if (response.status === 404) throw new Error("Sheet not found (404). Check permissions.");
+                if (response.status === 403) throw new Error("Access denied (403). Share sheet with 'Anyone with link'.");
+                throw new Error("Failed to fetch Sheet (Status: " + response.status + ")");
+            }
             const csvText = await response.text();
 
+            if (typeof Papa === 'undefined') throw new Error("PapaParse library not found");
+
             const parseResult = Papa.parse(csvText, { header: false });
-            // Expected: A=Trigger, B=Prompt
+            if (parseResult.errors.length) console.warn("CSV Parse warnings:", parseResult.errors);
+
             const prompts = parseResult.data.map(row => ({
                 trigger: (row[0] || "").toLowerCase().trim(),
                 prompt: row[1] || ""
@@ -92,3 +123,5 @@ window.AIEngine = {
         }
     }
 };
+
+console.log("[AI] Engine Loaded");

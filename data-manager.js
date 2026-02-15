@@ -5,7 +5,8 @@ import { Utils, storageLocal } from './utils.js';
 export const DataManager = {
     DEFAULT_DATA: {
         profiles: [], lastProfileId: "", lastProcessId: "", lastRange: "3", lastTab: "run", lastSubTab: "xpath", runMode: "single", selectedBatchRows: [], macros: {},
-        macroSheetConfig: { url: "", gid: "0" }
+        macroSheetConfig: { url: "", gid: "0" },
+        aiConfig: { apiKey: "", gid: "" }
     },
     appData: null,
     currentCsvData: null,
@@ -36,7 +37,8 @@ export const DataManager = {
             runMode: String(rawData.runMode || "single"),
             selectedBatchRows: Array.isArray(rawData.selectedBatchRows) ? rawData.selectedBatchRows : [],
             macros: (rawData.macros && typeof rawData.macros === 'object') ? rawData.macros : {},
-            macroSheetConfig: (rawData.macroSheetConfig && typeof rawData.macroSheetConfig === 'object') ? rawData.macroSheetConfig : { url: "", gid: "0" }
+            macroSheetConfig: (rawData.macroSheetConfig && typeof rawData.macroSheetConfig === 'object') ? rawData.macroSheetConfig : { url: "", gid: "0" },
+            aiConfig: (rawData.aiConfig && typeof rawData.aiConfig === 'object') ? rawData.aiConfig : { apiKey: "", gid: "" }
         };
     },
 

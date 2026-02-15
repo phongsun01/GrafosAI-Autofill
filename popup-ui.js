@@ -9,8 +9,8 @@ export const PopupUI = {
     initDOM: function () {
         const getEl = (id) => document.getElementById(id);
         this.dom = {
-            tabs: { run: getEl('tabRun'), macros: getEl('tabMacros'), config: getEl('tabConfig'), tools: getEl('tabTools'), ai: getEl('tabAI') },
-            views: { run: getEl('viewRun'), macros: getEl('viewMacros'), config: getEl('viewConfig'), tools: getEl('viewTools'), ai: getEl('viewAI') },
+            tabs: { run: getEl('tabRun'), config: getEl('tabConfig'), tools: getEl('tabTools'), ai: getEl('tabAI') },
+            views: { run: getEl('viewRun'), config: getEl('viewConfig'), tools: getEl('viewTools'), ai: getEl('viewAI') },
             mode: {
                 radioSingle: document.querySelector('input[name="runMode"][value="single"]'),
                 radioBatch: document.querySelector('input[name="runMode"][value="batch"]'),
@@ -19,8 +19,8 @@ export const PopupUI = {
                 noteSingle: getEl('noteAutofillContainer'),
                 noteBatch: getEl('noteBatchContainer')
             },
-            subTabs: { vars: getEl('subTabVars'), xpath: getEl('subTabXPath'), backup: getEl('subTabBackup') },
-            sections: { vars: getEl('sectionVars'), xpath: getEl('sectionXPath'), backup: getEl('sectionBackup') },
+            subTabs: { vars: getEl('subTabVars'), xpath: getEl('subTabXPath'), backup: getEl('subTabBackup'), macros: getEl('subTabMacros') },
+            sections: { vars: getEl('sectionVars'), xpath: getEl('sectionXPath'), backup: getEl('sectionBackup'), macros: getEl('sectionMacros') },
             btn: {
                 run: getEl('btnRun'), pause: getEl('btnPause'), stop: getEl('btnStop'),
                 batchRun: getEl('btnRunBatch'), batchPause: getEl('btnPauseBatch'), batchStop: getEl('btnStopBatch'),
@@ -28,7 +28,7 @@ export const PopupUI = {
                 addProfile: getEl('btnAddProfile'), addProcess: getEl('btnAddProcess'),
                 startPicker: getEl('btnStartPicker'), stopPicker: getEl('btnStopPicker'), copyXPath: getEl('btnCopyXPath'),
                 export: getEl('btnExport'), import: getEl('btnImport'), clear: getEl('btnClearAll'),
-                loadMacros: getEl('btnLoadMacros'), // [UPDATED]
+                loadMacros: getEl('btnLoadMacros'), importMacros: getEl('btnImportMacros'), exportMacros: getEl('btnExportMacros'), // [UPDATED]
                 testAi: getEl('btnTestAi'), aiScan: getEl('btnAiScan'), copyAi: getEl('btnCopyAi') // [NEW]
             },
             input: {
@@ -275,7 +275,6 @@ export const PopupUI = {
         });
     },
 
-
     renderBackupTab: function () {
         if (this.dom.text.lblProfileCount) this.dom.text.lblProfileCount.innerText = DataManager.appData.profiles.length;
         if (this.dom.text.lblLastBackup) this.dom.text.lblLastBackup.innerText = DataManager.appData.lastBackupTime ? new Date(DataManager.appData.lastBackupTime).toLocaleString() : "Never";
@@ -333,6 +332,17 @@ export const PopupUI = {
             this.dom.mode.sectionBatch.style.display = 'block';
             if (this.dom.mode.noteSingle) this.dom.mode.noteSingle.style.display = 'none';
             if (this.dom.mode.noteBatch) this.dom.mode.noteBatch.style.display = 'block';
+        }
+    },
+
+    // Helper to update AI Status Status
+    updateAiStatus: function (text, color) {
+        const statusBar = document.getElementById('aiStatus');
+        const statusText = document.getElementById('aiStatusText');
+        if (statusBar && statusText) {
+            statusBar.style.display = 'block';
+            statusText.innerText = text;
+            statusText.style.color = color || 'black';
         }
     }
 };

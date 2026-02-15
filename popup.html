@@ -422,7 +422,6 @@
 
   <div class="tabs">
     <div class="tab-btn active" id="tabRun">Run ⚡</div>
-    <div class="tab-btn" id="tabMacros">Macros 📦</div>
     <div class="tab-btn" id="tabTools" data-target="viewTools">Tools 🛠️</div>
     <div class="tab-btn" id="tabAI" data-target="viewAI">AI 🤖</div>
     <div class="tab-btn" id="tabConfig" data-target="viewConfig">Config ⚙️</div>
@@ -525,50 +524,7 @@
     <div id="noteBatchContainer" class="note-box" style="display:none; margin-top:15px;"></div>
   </div>
 
-  <div id="viewMacros" class="tab-content">
-    <div class="group-box">
-      <div class="group-title">📦 Macro Templates</div>
-      <div class="info-bar">
-        <span>Total: <b id="lblMacroCount">0</b></span>
-      </div>
-      <div style="max-height:300px; overflow-y:auto; margin-top:10px;">
-        <table id="macrosTable" style="width:100%; border-collapse:collapse;">
-          <thead>
-            <tr>
-              <th style="text-align:left; padding:8px; border-bottom:1px solid var(--border);">Name</th>
-              <th style="text-align:center; padding:8px; border-bottom:1px solid var(--border);">Commands</th>
-              <th style="width:60px; text-align:center; padding:8px; border-bottom:1px solid var(--border);">Action</th>
-            </tr>
-          </thead>
-          <tbody id="macrosTableBody"></tbody>
-        </table>
-      </div>
-      <div class="group-box" style="margin-top:10px;">
-        <label>🔗 Macro Sheet Link</label>
-        <input type="text" id="txtMacroSheetLink" placeholder="Paste link Google Sheet...">
-        <div class="col-3-flex">
-          <input type="text" id="txtMacroGid" placeholder="GID (auto)" style="flex:1" readonly>
-          <button id="btnLoadMacros" class="btn-main" style="width: auto; padding: 0 10px;">LOAD MACROS</button>
-        </div>
-      </div>
-    </div>
-    <div class="note-box" style="margin-top:10px;">
-      <strong>📖 Hướng dẫn:</strong><br>
-      <strong>1. Tạo Sheet:</strong> Cột A = Tên Macro, Cột B+ = Lệnh<br>
-      <strong>2. Public:</strong> File > Share > Publish to web (CSV)<br>
-      <strong>3. Load:</strong> Dán Link vào ô trên → LOAD MACROS<br>
-      <strong>4. Use:</strong> Trong Sheet chạy điền <code>macro:TenMacro</code><br><br>
-      <strong>Ví dụ cấu trúc Sheet (Ngang):</strong>
-      <table style="width:100%; border:1px solid #ddd; font-size:10px; margin-top:5px;">
-        <tr style="background:#f0f0f0;">
-          <th>A (Name)</th>
-          <th>B (Cmd 1)</th>
-          <th>C (Cmd 2)</th>
-        </tr>
-        <tr>
-      </table>
-    </div>
-  </div>
+
 
   <!-- Tab 5: AI Form Detection -->
   <div id="viewAI" class="tab-content">
@@ -655,10 +611,13 @@
     <!-- Sub Nav -->
     <div class="btn-wrapper" style="margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px;">
       <button id="subTabXPath" class="btn-main"
-        style="width:32%; font-size:12px; padding:6px; background:var(--text-sub);">XPath</button>
-      <button id="subTabVars" class="btn-main" style="width:32%; font-size:12px; padding:6px;">Variables</button>
+        style="width:23%; font-size:11px; padding:6px; background:var(--text-sub);">XPath</button>
+      <button id="subTabMacros" class="btn-main"
+        style="width:23%; font-size:11px; padding:6px; background:var(--text-sub);">Macros</button>
+      <button id="subTabVars" class="btn-main"
+        style="width:23%; font-size:11px; padding:6px; background:var(--text-sub);">Vars</button>
       <button id="subTabBackup" class="btn-main"
-        style="width:32%; font-size:12px; padding:6px; background:var(--text-sub);">Backup</button>
+        style="width:23%; font-size:11px; padding:6px; background:var(--text-sub);">Backup</button>
     </div>
 
     <style>
@@ -671,6 +630,47 @@
         cursor: pointer;
       }
     </style>
+
+    <!-- SECTION: MACROS (Moved from main tab) -->
+    <div id="sectionMacros" style="display:none">
+      <div class="group-box">
+        <div class="group-title">📦 Macro Templates</div>
+        <div class="info-bar">
+          <span>Total: <b id="lblMacroCount">0</b></span>
+        </div>
+        <div style="max-height:300px; overflow-y:auto; margin-top:10px;">
+          <table id="macrosTable" style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:8px; border-bottom:1px solid var(--border);">Name</th>
+                <th style="text-align:center; padding:8px; border-bottom:1px solid var(--border);">Commands</th>
+                <th style="width:60px; text-align:center; padding:8px; border-bottom:1px solid var(--border);">Action
+                </th>
+              </tr>
+            </thead>
+            <tbody id="macrosTableBody"></tbody>
+          </table>
+        </div>
+        <div class="group-box" style="margin-top:10px;">
+          <label>🔗 Macro Sheet Link</label>
+          <input type="text" id="txtMacroSheetLink" placeholder="Paste link Google Sheet...">
+          <div class="col-3-flex">
+            <input type="text" id="txtMacroGid" placeholder="GID (auto)" style="flex:1" readonly>
+            <button id="btnLoadMacros" class="btn-main" style="width: auto; padding: 0 10px;">LOAD</button>
+          </div>
+        </div>
+        <div class="btn-wrapper" style="margin-top:10px;">
+          <button id="btnImportMacros" class="btn-main">📥 Import JSON</button>
+          <button id="btnExportMacros" class="btn-main">📤 Export JSON</button>
+        </div>
+      </div>
+      <div class="note-box" style="margin-top:10px;">
+        <strong>📖 Hướng dẫn:</strong><br>
+        <strong>1. Tạo Sheet:</strong> Cột A = Tên Macro, Cột B+ = Lệnh<br>
+        <strong>2. Public:</strong> File > Share > Publish to web (CSV)<br>
+        <strong>3. Load:</strong> Dán Link vào ô trên → LOAD<br>
+      </div>
+    </div>
 
     <!-- VARIABLES SECTION -->
     <div id="sectionVars">

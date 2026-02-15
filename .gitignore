@@ -1,21 +1,3 @@
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Backups
-*.backup
-*.bak
-
-# AI Agent & Tools
 .agent/
-.gemini/
-
-# Node (in case added later)
-node_modules/
-package-lock.json
-
-# Local env & IDE
-.env
-.vscode/
-.idea/
+.system_generated/
+.DS_Store
