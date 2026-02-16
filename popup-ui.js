@@ -263,7 +263,7 @@ window.PopupUI = {
                 row.innerHTML = `
                     <td style="font-weight:600; color:var(--primary)">${key}</td>
                     <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${displayValue}">${displayValue}</td>
-                    <td><button class="btn-icon btn-del" data-key="${key}">×</button></td>
+                    <td><button class="btn-action btn-del" data-key="${key}">×</button></td>
                 `;
                 row.querySelector('.btn-del').onclick = () => {
                     chrome.runtime.sendMessage({ action: "DELETE_VARIABLE", key: key }, () => {
@@ -298,10 +298,10 @@ window.PopupUI = {
             div.innerHTML = `
                 <span style="font-weight:600;cursor:pointer;flex:1">${p.name}</span>
                 <div class="item-actions">
-                    <button class="btn-icon btn-up">▲</button>
-                    <button class="btn-icon btn-down">▼</button>
-                    <button class="btn-icon btn-edit">✎</button>
-                    <button class="btn-icon btn-del">✕</button>
+                    <button class="btn-action btn-up">▲</button>
+                    <button class="btn-action btn-down">▼</button>
+                    <button class="btn-action btn-edit">✎</button>
+                    <button class="btn-action btn-del">✕</button>
                 </div>`;
 
             div.querySelector('span').onclick = () => {
@@ -343,7 +343,7 @@ window.PopupUI = {
                 <td style="padding:8px; border-bottom:1px solid var(--border);">${name}</td>
                 <td style="padding:8px; border-bottom:1px solid var(--border); text-align:center;">${commands.length} commands</td>
                 <td style="padding:8px; border-bottom:1px solid var(--border); text-align:center;">
-                    <button class="btn-icon btn-del" data-macro-name="${name}" style="padding:4px 8px; font-size:10px;">Del</button>
+                    <button class="btn-action btn-del" data-macro-name="${name}" style="padding:4px 8px; font-size:10px;">Del</button>
                 </td>
             `;
         });

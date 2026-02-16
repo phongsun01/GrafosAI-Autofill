@@ -251,8 +251,70 @@
       width: 80px;
     }
 
+    /* --- STANDARD CONTROLS (v3.0.6) --- */
+    .control-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .input-std {
+      flex: 1;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      transition: all 0.2s;
+      background: var(--bg-card);
+      color: var(--text-main);
+      margin-bottom: 0;
+      /* Override default */
+    }
+
+    .input-std:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    html[data-theme="dark"] .input-std {
+      background: var(--bg-body);
+      color: var(--text-main);
+      border-color: var(--border);
+    }
+
+    .btn-std {
+      height: 36px;
+      padding: 0 16px;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .btn-std:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .btn-std.btn-icon-only {
+      width: 36px;
+      padding: 0;
+      font-size: 18px;
+    }
+
     /* --- ACTION BUTTONS --- */
     .btn-icon {
+      /* Deprecated: Use btn-action or btn-std */
       width: 24px;
       height: 24px;
       border: none;
@@ -334,6 +396,28 @@
 
     .item-actions {
       display: flex;
+      gap: 4px;
+    }
+
+    .btn-action {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s;
+    }
+
+    .btn-action:hover {
+      transform: scale(1.05);
+    }
+
+    .btn-action:active {
+      transform: scale(0.95);
     }
 
     /* --- MODE SELECTOR (Radio Group) --- */
@@ -700,18 +784,20 @@
 
       <div class="input-group">
         <label>Gemini API Key:</label>
-        <input type="password" id="txtAiApiKey" placeholder="Paste your API Key here">
+        <input type="password" id="txtAiApiKey" class="input-std" placeholder="Paste your API Key here">
       </div>
 
       <div class="input-group">
         <label>Prompt Sheet GID:</label>
-        <input type="text" id="txtAiGid" placeholder="e.g. 123456">
-        <button id="btnTestAi" class="btn-secondary">Test Connection</button>
+        <div class="control-row">
+          <input type="text" id="txtAiGid" class="input-std" placeholder="e.g. 123456">
+          <button id="btnTestAi" class="btn-std btn-secondary" style="width: auto;">Test</button>
+        </div>
       </div>
 
       <div class="input-group">
         <label>Form Type:</label>
-        <select id="selAiTrigger">
+        <select id="selAiTrigger" class="input-std" style="height:36px">
           <option value="custom">Custom (All Fields)</option>
           <option value="login">Login Form</option>
           <option value="signup">Register/Signup</option>
@@ -767,28 +853,30 @@
       </div>
     </div>
     <div class="group-box">
-      <div class="group-title">1. Profile
-        <div style="display: flex; gap:5px; width: 70%;">
-          <input type="text" id="newProfileName" placeholder="Tên mới..."
-            style="margin-bottom:0; height:28px; padding:4px 8px; font-size:12px;">
-          <button id="btnAddProfile" class="btn-main btn-add"
-            style="width:28px; height:28px; padding:0; font-size:14px;">+</button>
-        </div>
+      <div class="group-title">1. Profile</div>
+      <div class="control-row">
+        <input type="text" id="newProfileName" class="input-std" placeholder="Tên profile mới...">
+        <button id="btnAddProfile" class="btn-std btn-icon-only" title="Thêm Profile">+</button>
       </div>
-      <div id="profileList" style="max-height:120px; overflow-y:auto; margin-top:5px;"></div>
+      <div id="profileList" style="max-height:150px; overflow-y:auto; margin-top:5px;"></div>
     </div>
 
     <div class="group-box" id="processBox" style="opacity:0.5; pointer-events:none;">
       <div class="group-title">2. Quy trình: <span id="currentProfileName" style="color:var(--primary)">...</span></div>
-      <input type="text" id="newProcessName" placeholder="Tên quy trình">
-      <input type="text" id="newProcessLink" placeholder="Link Google Sheet...">
-      <div class="col-3-flex">
-        <input type="text" id="txtBatchCols" placeholder="Cột hiển thị (VD: B,D hoặc E-G)"
-          title="Các cột hiển thị ở tab Batch">
-        <input type="text" id="txtActiveCols" placeholder="Cột chạy (VD: A-C)" title="Để trống = Chạy hết">
+
+      <input type="text" id="newProcessName" class="input-std" placeholder="Tên quy trình"
+        style="width:100%; margin-bottom:8px;">
+      <input type="text" id="newProcessLink" class="input-std" placeholder="Link Google Sheet..."
+        style="width:100%; margin-bottom:8px;">
+
+      <div class="control-row">
+        <input type="text" id="txtBatchCols" class="input-std" placeholder="Cột hiển thị (VD: B,D)"
+          title="Cột hiển thị">
+        <input type="text" id="txtActiveCols" class="input-std" placeholder="Cột chạy (VD: A-C)" title="Cột chạy">
       </div>
-      <button id="btnAddProcess" class="btn-main">LƯU QUY TRÌNH</button>
-      <div id="processList" style="max-height:120px; overflow-y:auto; margin-top:8px;"></div>
+
+      <button id="btnAddProcess" class="btn-std full-width" style="width:100%">LƯU QUY TRÌNH</button>
+      <div id="processList" style="max-height:150px; overflow-y:auto; margin-top:8px;"></div>
     </div>
     <div id="noteConfigContainer" class="note-box"></div>
   </div>
@@ -796,14 +884,14 @@
   <div id="viewTools" class="tab-content">
     <!-- Sub Nav -->
     <div class="btn-wrapper" style="margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-      <button id="subTabXPath" class="btn-main"
-        style="width:23%; font-size:11px; padding:6px; background:var(--text-sub);">XPath</button>
-      <button id="subTabMacros" class="btn-main"
-        style="width:23%; font-size:11px; padding:6px; background:var(--text-sub);">Macros</button>
-      <button id="subTabVars" class="btn-main"
-        style="width:23%; font-size:11px; padding:6px; background:var(--text-sub);">Vars</button>
-      <button id="subTabBackup" class="btn-main"
-        style="width:23%; font-size:11px; padding:6px; background:var(--text-sub);">Backup</button>
+      <button id="subTabXPath" class="btn-std"
+        style="flex:1; font-size:11px; padding:6px; background:var(--text-sub);">XPath</button>
+      <button id="subTabVars" class="btn-std"
+        style="flex:1; font-size:11px; padding:6px; background:var(--text-sub);">Biến</button>
+      <button id="subTabMacros" class="btn-std"
+        style="flex:1; font-size:11px; padding:6px; background:var(--text-sub);">Macro</button>
+      <button id="subTabBackup" class="btn-std"
+        style="flex:1; font-size:11px; padding:6px; background:var(--text-sub);">Backup</button>
     </div>
 
     <style>
