@@ -1,7 +1,7 @@
 // MODULE: Utils (V2.9 - Enhanced Logging)
 import { ERRORS, TIMEOUTS, RETRY_CONFIG } from './constants.js';
 
-export const storageLocal = {
+window.storageLocal = {
     get: (keys) => new Promise((resolve, reject) => {
         chrome.storage.local.get(keys, (result) => {
             if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
@@ -80,7 +80,7 @@ const ERROR_CODES = {
 /**
  * Custom Extension Error with error code
  */
-export class ExtensionError extends Error {
+window.ExtensionError = class extends Error {
     constructor(message, code = ERROR_CODES.ERR_UNKNOWN, context = {}) {
         super(message);
         this.name = 'ExtensionError';
@@ -116,7 +116,7 @@ function logError(error, context = 'Unknown', code = ERROR_CODES.ERR_UNKNOWN) {
 /**
  * Enhanced error handler with recovery logic based on error codes
  */
-export function handleError(error, context = 'Unknown') {
+window.handleError = function(error, context = 'Unknown') {
     let code = ERROR_CODES.ERR_UNKNOWN;
 
     // Determine error code from error type/message
@@ -148,7 +148,7 @@ export function handleError(error, context = 'Unknown') {
     return { error: errorLog, recovery };
 }
 
-export const Utils = {
+window.Utils = {
     // [FIX 2] Detailed Timeout Log
     sendMessageWithRetry: async (tabId, message, maxRetries = RETRY_CONFIG.MAX_RETRIES) => {
         if (!tabId || typeof tabId !== 'number') return false;

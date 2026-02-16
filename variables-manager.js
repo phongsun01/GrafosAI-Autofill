@@ -2,7 +2,7 @@
  * variables-manager.js (Module Version)
  * Handles variable storage, retrieval, scoping, and substitution.
  */
-export class VariablesManager {
+window.VariablesManager = class {
     constructor() {
         this.globalVars = {};
         this.csvRowData = {};
@@ -92,4 +92,4 @@ export class VariablesManager {
 }
 
 // Create a singleton instance for the background script
-export const varsManager = new VariablesManager();
+window.varsManager = new window.VariablesManager();

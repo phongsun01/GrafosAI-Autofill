@@ -1,5 +1,5 @@
 // MODULE: Constants
-export const ERRORS = {
+window.ERRORS = {
     NO_ROWS: "Không có dòng nào để chạy!",
     NO_DATA: "⚠️ Dữ liệu chưa tải xong! (Vui lòng kiểm tra lại Link/GID)",
     NO_PROCESS: "Lỗi: Quy trình không tồn tại (Có thể đã bị xóa)!",
@@ -14,11 +14,11 @@ export const ERRORS = {
     MISSING_MODULES: "Lỗi: Không tìm thấy module. Hãy kiểm tra file utils.js và data-manager.js"
 };
 
-export const TIMEOUTS = {
+window.TIMEOUTS = {
     POLL_INTERVAL: 2000,
     RETRY_BASE: 500
 };
 
-export const RETRY_CONFIG = {
+window.RETRY_CONFIG = {
     MAX_RETRIES: 3
 };

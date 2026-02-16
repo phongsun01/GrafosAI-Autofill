@@ -1,8 +1,6 @@
 // MODULE: Data Manager (Retry Fetch + Logging)
-import { ERRORS } from './constants.js';
-import { Utils, storageLocal } from './utils.js';
 
-export const DataManager = {
+window.DataManager = {
     DEFAULT_DATA: {
         profiles: [], lastProfileId: "", lastProcessId: "", lastRange: "3", lastTab: "run", lastSubTab: "xpath", runMode: "single", selectedBatchRows: [], macros: {},
         macroSheetConfig: { url: "", gid: "0" },
