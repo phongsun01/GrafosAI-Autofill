@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Sheet Automator Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #2563eb;
@@ -27,7 +30,7 @@
     body {
       width: 400px;
       margin: 0;
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg-body);
       color: var(--text-main);
       font-size: 13px;
@@ -52,7 +55,8 @@
       font-weight: 600;
       color: var(--text-sub);
       border-bottom: 2px solid transparent;
-      transition: all 0.2s;
+      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+      user-select: none;
     }
 
     .tab-btn:hover {
@@ -126,6 +130,13 @@
     input:focus,
     select:focus {
       border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
 
     /* --- BUTTONS --- */
@@ -138,12 +149,19 @@
       cursor: pointer;
       color: white;
       background: var(--primary);
-      transition: background 0.2s;
+      transition: background-color 0.2s, box-shadow 0.2s;
       margin-top: 4px;
+      user-select: none;
     }
 
     .btn-main:hover {
       background: var(--primary-hover);
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-main:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
 
     .btn-wrapper {
@@ -164,7 +182,7 @@
       width: 80px;
     }
 
-    /* --- ACTION BUTTONS (Fix màu nút) --- */
+    /* --- ACTION BUTTONS --- */
     .btn-icon {
       width: 24px;
       height: 24px;
@@ -177,6 +195,21 @@
       align-items: center;
       font-size: 12px;
       margin-left: 2px;
+      transition: background-color 0.2s, transform 0.1s;
+      user-select: none;
+    }
+
+    .btn-icon:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-icon:active {
+      transform: translateY(0);
+    }
+
+    .btn-icon:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
 
     .btn-up,
@@ -415,7 +448,7 @@
   <script src="rate-limiter.js"></script>
   <script src="security-utils.js"></script>
   <script src="ai-engine.js"></script>
-    <script src="constants.js"></script>
+  <script src="constants.js"></script>
   <script src="utils.js"></script>
   <script src="data-manager.js"></script>
   <script src="popup-ui.js"></script>
