@@ -55,7 +55,7 @@ window.Logger = {
      * Format log message with timestamp and context
      */
     format(level, context, message, ...args) {
-        const timestamp = new Date().toISOString().substr(11, 12); // HH:MM:SS.mmm
+        const timestamp = new Date().toISOString().substring(11, 23); // HH:MM:SS.mmm
         const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
         const contextStr = context ? ` [${context}]` : '';
         return [prefix + contextStr, message, ...args];

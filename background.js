@@ -512,3 +512,12 @@ async function runNextItem(retryCount = 0) {
     });
     await queueLock;
 }
+
+
+// Cleanup on extension suspend
+chrome.runtime.onSuspend.addListener(() => {
+    Logger.info('[Background] Extension suspending, cleaning up...');
+    if (window.GeminiRateLimiter?.destroy) {
+        window.GeminiRateLimiter.destroy();
+    }
+});
