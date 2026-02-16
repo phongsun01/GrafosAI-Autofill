@@ -170,7 +170,9 @@
       border-radius: var(--radius);
       margin-bottom: 8px;
       font-size: 13px;
-      transition: border 0.2s;
+      transition: border 0.2s, background-color 0.2s, color 0.2s;
+      background: var(--bg-card);
+      color: var(--text-main);
     }
 
     input:focus,
@@ -543,9 +545,6 @@
 
     /* --- THEME TOGGLE --- */
     .theme-toggle {
-      position: absolute;
-      top: 8px;
-      right: 8px;
       width: 32px;
       height: 32px;
       border: none;
@@ -557,7 +556,6 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s;
-      z-index: 20;
     }
 
     .theme-toggle:hover {
@@ -754,8 +752,7 @@
       <div class="group-title">🎨 Giao Diện</div>
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <label>Chế độ tối (Dark Mode)</label>
-        <button id="themeToggle" class="btn-icon"
-          style="width:32px; height:32px; border-radius:50%; border:1px solid var(--border);">
+        <button id="themeToggle" class="theme-toggle">
           <svg id="iconSun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
             stroke="currentColor" style="width: 20px; height: 20px;">
             <path stroke-linecap="round" stroke-linejoin="round"
