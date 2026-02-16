@@ -36,7 +36,7 @@
       --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
     }
 
-    [data-theme="dark"] {
+    html[data-theme="dark"] {
       /* Dark Mode - AI-Native Palette */
       --primary: #3B82F6;
       --primary-hover: #60A5FA;
@@ -162,7 +162,7 @@
     }
 
     /* --- FORM ELEMENTS --- */
-    input,
+    input:not([type="radio"]):not([type="checkbox"]),
     select {
       width: 100%;
       padding: 8px;
