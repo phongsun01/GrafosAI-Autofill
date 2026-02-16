@@ -62,9 +62,13 @@ async function saveAndBroadcast(immediate = false) {
 }
 
 async function actualSaveAndBroadcast(immediate) {
+    // [FIX] Always broadcast UI updates first (before dirty check)
+    const { variables, ...stateWithoutVars } = bgState;
+    chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
+    
     // [OPTIMIZATION] Only save if state has actually changed
     if (!isDirty && !immediate) {
-        console.log('[Storage] Skipping save - no changes detected');
+        Logger.info('[Storage] Skipping save - no changes detected');
         return;
     }
 
@@ -83,9 +87,6 @@ async function actualSaveAndBroadcast(immediate) {
         ]);
 
         isDirty = false; // Reset dirty flag after successful save
-
-        // Only broadcast UI state (exclude heavy variables)
-        chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
     } catch (e) {
         console.error("Save State Error:", e);
     }
