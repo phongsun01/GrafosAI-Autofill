@@ -28,7 +28,12 @@
       --bg-header: #f1f5f9;
       --border-table: #cbd5e1;
       --bg-note: #f8fafc;
+      --bg-note: #f8fafc;
       --text-note: #64748b;
+
+      /* Links & Status */
+      --link-color: #2563EB;
+      --status-success: #166534;
 
       /* Shadows */
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -55,7 +60,12 @@
       --bg-header: #1e293b;
       --border-table: #334155;
       --bg-note: #1e293b;
+      --bg-note: #1e293b;
       --text-note: #94a3b8;
+
+      /* Links & Status */
+      --link-color: #60A5FA;
+      --status-success: #34D399;
 
       /* Shadows for dark mode */
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -656,6 +666,22 @@
       width: 18px;
       height: 18px;
       color: var(--text-main);
+    }
+
+    /* Links */
+    a {
+      color: var(--link-color);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* AI Status */
+    .status-text-success {
+      color: var(--status-success) !important;
+      font-weight: 600;
     }
   </style>
 

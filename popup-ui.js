@@ -385,7 +385,16 @@ window.PopupUI = {
         if (statusBar && statusText) {
             statusBar.style.display = 'block';
             statusText.innerText = text;
-            statusText.style.color = color || 'black';
+
+            // Remove old inline color if any
+            statusText.style.color = '';
+            statusText.className = ''; // Reset
+
+            if (color === 'green' || text === 'Ready') {
+                statusText.classList.add('status-text-success');
+            } else if (color) {
+                statusText.style.color = color;
+            }
         }
     }
 };
