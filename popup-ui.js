@@ -5,41 +5,69 @@ window.PopupUI = {
     dom: {},
 
     // [NEW] Theme Logic
+    // [NEW] Theme & Font Logic
     initTheme: function () {
-        const themeToggle = document.getElementById('themeToggle');
-        const iconSun = document.getElementById('iconSun');
-        const iconMoon = document.getElementById('iconMoon');
-        const themeLabel = document.getElementById('themeLabel');
+        const themeSelector = document.getElementById('themeSelector');
+        const fontSizeSelector = document.getElementById('fontSizeSelector');
 
-        if (!themeToggle || !iconSun || !iconMoon) return;
+        // --- Theme Logic ---
+        const storedTheme = localStorage.getItem('theme') || 'light';
+        // Initial Apply (no transition on load)
+        setThemeInternal(storedTheme);
 
-        // Auto-detect system preference
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const savedTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+        if (themeSelector) {
+            themeSelector.value = storedTheme;
+            themeSelector.addEventListener('change', (e) => {
+                const newTheme = e.target.value;
+                if (document.startViewTransition) {
+                    document.startViewTransition(() => setThemeInternal(newTheme));
+                } else {
+                    setThemeInternal(newTheme);
+                }
+                showThemeToast(newTheme);
+            });
+        }
 
-        // Apply saved theme
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        updateIcons(savedTheme);
+        function setThemeInternal(themeName) {
+            document.documentElement.setAttribute('data-theme', themeName);
+            localStorage.setItem('theme', themeName);
+        }
 
-        // Toggle handler
-        themeToggle.addEventListener('click', () => {
-            const current = document.documentElement.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            updateIcons(next);
-        });
+        function showThemeToast(themeName) {
+            const existing = document.querySelector('.theme-toast');
+            if (existing) existing.remove();
 
-        function updateIcons(theme) {
-            if (theme === 'dark') {
-                iconSun.style.display = 'none';
-                iconMoon.style.display = 'block';
-                if (themeLabel) themeLabel.textContent = 'Dark Mode';
-            } else {
-                iconSun.style.display = 'block';
-                iconMoon.style.display = 'none';
-                if (themeLabel) themeLabel.textContent = 'Light Mode';
-            }
+            const toast = document.createElement('div');
+            toast.className = 'theme-toast';
+            // Simple mapping for nice names
+            const names = { light: 'Light Mode', dark: 'Dark Mode', midnight: 'Midnight', forest: 'Forest' };
+            toast.innerHTML = `<span>🎨</span> ${names[themeName] || themeName}`;
+
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+            }, 3000);
+        }
+
+        // --- Font Size Logic ---
+        const storedSize = localStorage.getItem('fontSize') || 'medium';
+        setFontSizeInternal(storedSize);
+
+        if (fontSizeSelector) {
+            fontSizeSelector.value = storedSize;
+            fontSizeSelector.addEventListener('change', (e) => {
+                setFontSizeInternal(e.target.value);
+            });
+        }
+
+        function setFontSizeInternal(size) {
+            let pxValue = '13px'; // medium default
+            if (size === 'small') pxValue = '12px';
+            if (size === 'large') pxValue = '14px';
+
+            // We update the --text-sm variable which body uses as base size
+            document.documentElement.style.setProperty('--text-sm', pxValue);
+            localStorage.setItem('fontSize', size);
         }
     },
 

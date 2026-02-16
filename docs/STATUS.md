@@ -1,9 +1,15 @@
 # Project Status
 
-**Current Version:** 2.9.6  
+**Current Version:** 3.0.9 (Stable)
 **Last Updated:** 2026-02-16
 
-## Recent Hotfixes (v2.8.7 - v2.9.6)
+## Recent Releases
+### 🚀 v3.0.9 (Stable Release)
+- **UI Redesign**: Complete overhaul with AI-Native aesthetics.
+- **Dark Mode**: Full support with system detection and manual toggle.
+- **Config Tab**: Standardized inputs, buttons, and improved layout.
+- **AI Tab**: Improved visibility for status text and links in dark mode.
+- **Under-the-hood**: Fixed CSP issues by removing inline scripts.
 
 ### Critical Fixes
 - ✅ **v2.8.7-v2.9.2**: ES6 module conversion for Manifest V3 compatibility
@@ -24,6 +30,7 @@ Column B: fill(//*[@id="target"], ${myVar})
 ### ✅ Completed Features
 | Feature | Status | Version |
 |---------|--------|---------|
+| **UI Redesign (Dark Mode)** | ✅ Done | v3.0.9 |
 | Conditional Logic (if/else) | ✅ Done | v1.9 |
 | Data Extraction (`extract`) | ✅ Done | v1.9 |
 | Variable System (`${var}`) | ✅ Done | v2.9.6 |

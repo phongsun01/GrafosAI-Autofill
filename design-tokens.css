@@ -1,0 +1,183 @@
+/* design-tokens.css */
+:root {
+  /* Spacing Scale (4px base) */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  
+  /* Font Sizes */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  
+  /* Font Weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+  
+  /* Z-Index Layers */
+  --z-base: 1;
+  --z-dropdown: 10;
+  --z-overlay: 20;
+  --z-modal: 30;
+  --z-toast: 100;
+
+  /* Default Theme (Light) */
+  --primary: #2563EB;
+  --primary-hover: #1d4ed8;
+  --secondary: #3B82F6;
+  --accent: #F97316;
+  --bg-body: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-sub: #f1f5f9;  /* Added for sub-sections */
+  --bg-header: #f1f5f9;
+  --bg-note: #f8fafc;
+  --text-main: #1E293B;
+  --text-sub: #64748B;
+  --text-note: #64748b;
+  --border: #E2E8F0;
+  --border-table: #cbd5e1;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --link-color: #2563EB;
+  --status-success: #166534;
+  --status-info: #2563EB;
+  --status-warning: #d97706;
+  --status-error: #dc2626;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme */
+html[data-theme="dark"] {
+  --primary: #3B82F6;
+  --primary-hover: #60A5FA;
+  --secondary: #60A5FA;
+  --accent: #FB923C;
+  --bg-body: #0F172A;
+  --bg-card: #1E293B;
+  --bg-sub: #334155;
+  --bg-header: #1e293b;
+  --bg-note: #1e293b;
+  --text-main: #F1F5F9;
+  --text-sub: #94A3B8;
+  --text-note: #94a3b8;
+  --border: #334155;
+  --border-table: #334155;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --link-color: #60A5FA;
+  --status-success: #34D399;
+  --status-info: #60A5FA;
+  --status-warning: #FBBF24;
+  --status-error: #F87171;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Midnight Theme */
+html[data-theme="midnight"] {
+  --primary: #6366F1;
+  --primary-hover: #818cf8;
+  --secondary: #818cf8;
+  --accent: #c084fc;
+  --bg-body: #0A0E27;
+  --bg-card: #141B3D;
+  --bg-sub: #1e2952;
+  --bg-header: #141B3D;
+  --bg-note: #141B3D;
+  --text-main: #e2e8f0;
+  --text-sub: #94a3b8;
+  --text-note: #94a3b8;
+  --border: #2d3748;
+  --border-table: #2d3748;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --link-color: #818cf8;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.6);
+}
+
+/* Forest Theme */
+html[data-theme="forest"] {
+  --primary: #10B981;
+  --primary-hover: #34d399;
+  --secondary: #34d399;
+  --accent: #a3e635;
+  --bg-body: #0F1F0F;
+  --bg-card: #1A2E1A;
+  --bg-sub: #264226;
+  --bg-header: #1A2E1A;
+  --bg-note: #1A2E1A;
+  --text-main: #ecfdf5;
+  --text-sub: #a7f3d0;
+  --text-note: #a7f3d0;
+  --border: #264226;
+  --border-table: #264226;
+  --success: #4ade80;
+  --warning: #facc15;
+  --danger: #ef4444;
+  --link-color: #34d399;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.6);
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --primary: #0000EE;
+    --text-main: #000000;
+    --bg-card: #FFFFFF;
+    --border: #000000;
+  }
+  
+  html[data-theme="dark"] {
+    --primary: #5B9BFF;
+    --text-main: #FFFFFF;
+    --bg-card: #000000;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
