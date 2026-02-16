@@ -18,7 +18,7 @@ extract(//*[@id="sourceElement"], {var:variableName})
 
 | Column A (Extract) | Column B (Fill) |
 |-------------------|-----------------|
-| `extract(//*[@id="investorName2"], {var:cdt})` | `![alt text](image.png)` |
+| `extract(//*[@id="investorName2"], {var:cdt})` | `fill(//*[@id="decisionAgencyRegular"], ${cdt})` |
 
 **What happens:**
 1. Extension extracts text from `#investorName2`
