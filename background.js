@@ -1,5 +1,5 @@
 // MODULE: Background Service Worker (V2.4 - Stop Fix)
-import { Utils, storageLocal } from './utils.js';
+// Utils and storageLocal are available via window.*
 
 // [LOGGING] Inline Logger for service worker (can't load external scripts)
 const Logger = {
@@ -38,7 +38,7 @@ function formatDuration(ms) {
 // Load State
 (async () => {
     try {
-        const result = await storageLocal.get(['bgState', 'variables']); // Load both
+        const result = await window.storageLocal.get(['bgState', 'variables']); // Load both
         if (result.bgState) bgState = result.bgState;
         if (result.variables) bgState.variables = result.variables;
     } catch (e) { }
@@ -72,7 +72,7 @@ async function actualSaveAndBroadcast(immediate) {
         return;
     }
 
-    if (!await Utils.checkStorageQuota()) {
+    if (!await window.Utils.checkStorageQuota()) {
         chrome.runtime.sendMessage({ action: "quota_low_warning" }).catch(() => { });
         const { variables, ...stateWithoutVars } = bgState;
         chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
@@ -82,8 +82,8 @@ async function actualSaveAndBroadcast(immediate) {
     try {
         const { variables, ...stateWithoutVars } = bgState;
         await Promise.all([
-            storageLocal.set({ bgState: stateWithoutVars }),
-            storageLocal.set({ variables: variables })
+            window.storageLocal.set({ bgState: stateWithoutVars }),
+            window.storageLocal.set({ variables: variables })
         ]);
 
         isDirty = false; // Reset dirty flag after successful save
@@ -283,7 +283,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                         if (bgState.pausedBySheet) {
                             try {
-                                await Utils.sendMessageWithRetry(bgState.targetTabId, { action: "UNPAUSE" });
+                                await window.Utils.sendMessageWithRetry(bgState.targetTabId, { action: "UNPAUSE" });
                             } catch (err) {
                                 bgState.status = "PAUSED"; bgState.logs = "⚠️ Mất kết nối Tab."; await saveAndBroadcast();
                             }
@@ -419,7 +419,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                 console.log(`[DEBUG] SET_VARIABLE: key="${request.key}", value="${value}", stored as:`, bgState.variables[request.key]);
 
-                await storageLocal.set({ variables: bgState.variables });
+                await window.storageLocal.set({ variables: bgState.variables });
                 sendResponse({ success: true });
                 return true;
             }
@@ -433,7 +433,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === "DELETE_VARIABLE") {
                 if (bgState.variables && bgState.variables[request.key]) {
                     delete bgState.variables[request.key];
-                    await storageLocal.set({ bgState: bgState });
+                    await window.storageLocal.set({ bgState: bgState });
                     sendResponse({ success: true });
                 } else {
                     sendResponse({ success: false });
@@ -443,7 +443,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             if (request.action === "CLEAR_VARIABLES") {
                 bgState.variables = {};
-                await storageLocal.set({ bgState: bgState });
+                await window.storageLocal.set({ bgState: bgState });
                 sendResponse({ success: true });
                 return;
             }
@@ -451,7 +451,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             // --- MACRO SYSTEM HANDLERS ---
             if (request.action === "GET_MACROS") {
                 try {
-                    const result = await storageLocal.get(['appData']);
+                    const result = await window.storageLocal.get(['appData']);
                     const macros = result.appData?.macros || {};
                     sendResponse({ macros: macros });
                 } catch (e) {
@@ -484,7 +484,7 @@ async function runNextItem(retryCount = 0) {
 
         try {
             await ensureContentScript(bgState.targetTabId);
-            await Utils.sendMessageWithRetry(bgState.targetTabId, {
+            await window.Utils.sendMessageWithRetry(bgState.targetTabId, {
                 action: "fill_single_row",
                 xpaths: item.xpaths,
                 values: item.values,
