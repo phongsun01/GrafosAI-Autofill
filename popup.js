@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // INIT DOM
         const dom = window.PopupUI.initDOM();
+        window.PopupUI.initTheme(); // [NEW] Initialize Theme Logic
 
         // --- 2. INIT ---
         if (!DataManager || !Utils) return window.PopupUI.showToast(window.ERRORS.MISSING_MODULES, 'error');

@@ -4,6 +4,45 @@ window.PopupUI = {
     // DOM Cache
     dom: {},
 
+    // [NEW] Theme Logic
+    initTheme: function () {
+        const themeToggle = document.getElementById('themeToggle');
+        const iconSun = document.getElementById('iconSun');
+        const iconMoon = document.getElementById('iconMoon');
+        const themeLabel = document.getElementById('themeLabel');
+
+        if (!themeToggle || !iconSun || !iconMoon) return;
+
+        // Auto-detect system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const savedTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+
+        // Apply saved theme
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateIcons(savedTheme);
+
+        // Toggle handler
+        themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateIcons(next);
+        });
+
+        function updateIcons(theme) {
+            if (theme === 'dark') {
+                iconSun.style.display = 'none';
+                iconMoon.style.display = 'block';
+                if (themeLabel) themeLabel.textContent = 'Dark Mode';
+            } else {
+                iconSun.style.display = 'block';
+                iconMoon.style.display = 'none';
+                if (themeLabel) themeLabel.textContent = 'Light Mode';
+            }
+        }
+    },
+
     initDOM: function () {
         const getEl = (id) => document.getElementById(id);
         this.dom = {
@@ -216,10 +255,10 @@ window.PopupUI = {
             keys.forEach(key => {
                 // [FIX] Handle both old format (direct value) and new format ({value, _timestamp})
                 const varData = vars[key];
-                const displayValue = (typeof varData === 'object' && varData.value !== undefined) 
-                    ? varData.value 
+                const displayValue = (typeof varData === 'object' && varData.value !== undefined)
+                    ? varData.value
                     : varData;
-                
+
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td style="font-weight:600; color:var(--primary)">${key}</td>

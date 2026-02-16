@@ -957,46 +957,6 @@
     </div>
   </div>
 
-  <script>
-    // Theme Toggle Logic
-    (function () {
-      const themeToggle = document.getElementById('themeToggle');
-      const iconSun = document.getElementById('iconSun');
-      const iconMoon = document.getElementById('iconMoon');
-      const themeLabel = document.getElementById('themeLabel');
-
-      if (!themeToggle || !iconSun || !iconMoon) return;
-
-      // Auto-detect system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const savedTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
-
-      // Apply saved theme
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      updateIcons(savedTheme);
-
-      // Toggle handler
-      themeToggle.addEventListener('click', () => {
-        const current = document.documentElement.getAttribute('data-theme');
-        const next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
-        updateIcons(next);
-      });
-
-      function updateIcons(theme) {
-        if (theme === 'dark') {
-          iconSun.style.display = 'none';
-          iconMoon.style.display = 'block';
-          if (themeLabel) themeLabel.textContent = 'Dark Mode';
-        } else {
-          iconSun.style.display = 'block';
-          iconMoon.style.display = 'none';
-          if (themeLabel) themeLabel.textContent = 'Light Mode';
-        }
-      }
-    })();
-  </script>
 </body>
 
 </html>
