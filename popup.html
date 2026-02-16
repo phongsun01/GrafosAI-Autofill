@@ -34,6 +34,9 @@
       /* Links & Status */
       --link-color: #2563EB;
       --status-success: #166534;
+      --status-info: #2563EB;
+      --status-warning: #d97706;
+      --status-error: #dc2626;
 
       /* Shadows */
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -66,6 +69,9 @@
       /* Links & Status */
       --link-color: #60A5FA;
       --status-success: #34D399;
+      --status-info: #60A5FA;
+      --status-warning: #FBBF24;
+      --status-error: #F87171;
 
       /* Shadows for dark mode */
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -681,6 +687,21 @@
     /* AI Status */
     .status-text-success {
       color: var(--status-success) !important;
+      font-weight: 600;
+    }
+
+    .status-text-info {
+      color: var(--status-info) !important;
+      font-weight: 600;
+    }
+
+    .status-text-warning {
+      color: var(--status-warning) !important;
+      font-weight: 600;
+    }
+
+    .status-text-error {
+      color: var(--status-error) !important;
       font-weight: 600;
     }
   </style>

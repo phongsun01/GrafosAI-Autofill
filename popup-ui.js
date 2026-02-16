@@ -392,6 +392,12 @@ window.PopupUI = {
 
             if (color === 'green' || text === 'Ready') {
                 statusText.classList.add('status-text-success');
+            } else if (color === 'blue' || color === 'purple') {
+                statusText.classList.add('status-text-info');
+            } else if (color === 'orange') {
+                statusText.classList.add('status-text-warning');
+            } else if (color === 'red') {
+                statusText.classList.add('status-text-error');
             } else if (color) {
                 statusText.style.color = color;
             }
