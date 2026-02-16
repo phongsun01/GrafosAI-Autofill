@@ -192,10 +192,10 @@ setInterval(() => {
             continue;
         }
 
-        // Enforce maxVarLength
-        if (typeof val === 'string' && val.length > maxVarLength) {
-            bgState.variables[key] = val.substring(0, maxVarLength);
-            console.warn(`[Cleanup] Truncated variable "${key}" from ${val.length} to ${maxVarLength} chars`);
+        // Enforce maxVarLength for string values
+        if (val && typeof val === 'object' && typeof val.value === 'string' && val.value.length > maxVarLength) {
+            bgState.variables[key].value = val.value.substring(0, maxVarLength);
+            console.warn(`[Cleanup] Truncated variable "${key}" from ${val.value.length} to ${maxVarLength} chars`);
         }
     }
 
@@ -370,8 +370,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             // --- VARIABLE SYSTEM HANDLERS ---
             if (request.action === "SET_VARIABLE") {
                 if (!bgState.variables) bgState.variables = {};
-                bgState.variables[request.key] = request.value;
-                await storageLocal.set({ bgState: bgState });
+
+                // [FIX] Enforce maxVarLength in real-time
+                const maxLen = window.APP_CONFIG?.performance?.variables?.maxVarLength || 1000;
+                let value = request.value;
+                if (typeof value === 'string' && value.length > maxLen) {
+                    value = value.substring(0, maxLen);
+                    console.warn(`[Variables] Truncated "${request.key}" to ${maxLen} chars`);
+                }
+
+                // [FIX] Add timestamp for TTL tracking
+                bgState.variables[request.key] = {
+                    value: value,
+                    _timestamp: Date.now()
+                };
+
+                await storageLocal.set({ variables: bgState.variables });
                 sendResponse({ success: true });
                 return true;
             }

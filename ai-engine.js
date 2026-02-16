@@ -14,7 +14,20 @@ window.AIEngine = {
      */
     async init() {
         console.log('[AI] Initializing...');
-        return true;
+        try {
+            // [FIX] Load model cache from storage
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                const result = await chrome.storage.local.get(['modelCache']);
+                if (result.modelCache && result.modelCache.model) {
+                    this.modelCache = result.modelCache;
+                    console.log('[AI] Loaded cached model from storage:', this.modelCache.model);
+                }
+            }
+            return true;
+        } catch (e) {
+            console.error('[AI] Init failed:', e);
+            return false;
+        }
     },
 
     /**
@@ -143,6 +156,11 @@ window.AIEngine = {
                     this.modelCache.model = modelName;
                     this.modelCache.timestamp = now;
 
+                    // [FIX] Persist cache to storage
+                    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                        await chrome.storage.local.set({ modelCache: this.modelCache });
+                    }
+
                     console.log(`[AI] Selected best model: ${fullName} (cached for 24h)`);
                     return modelName;
                 }
@@ -153,6 +171,12 @@ window.AIEngine = {
                 const modelName = candidates[0].name.replace("models/", "");
                 this.modelCache.model = modelName;
                 this.modelCache.timestamp = now;
+
+                // [FIX] Persist cache to storage
+                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                    await chrome.storage.local.set({ modelCache: this.modelCache });
+                }
+
                 console.log(`[AI] Selected fallback model: ${candidates[0].name}`);
                 return modelName;
             }
