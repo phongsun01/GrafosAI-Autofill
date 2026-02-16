@@ -1,9 +1,4 @@
 // VERSION: 4.0 (Modularized)
-import { Utils } from './utils.js';
-import { DataManager } from './data-manager.js';
-import { ERRORS } from './constants.js';
-import { PopupUI } from './popup-ui.js';
-import { PopupLogic } from './popup-logic.js';
 
 // Expose modules for non-module scripts (like ai-engine.js)
 window.DataManager = DataManager;
@@ -19,10 +14,10 @@ if (!window.AIEngine) {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // INIT DOM
-        const dom = PopupUI.initDOM();
+        const dom = window.PopupUI.initDOM();
 
         // --- 2. INIT ---
-        if (!DataManager || !Utils) return PopupUI.showToast(ERRORS.MISSING_MODULES, 'error');
+        if (!DataManager || !Utils) return window.PopupUI.showToast(window.ERRORS.MISSING_MODULES, 'error');
 
         if (typeof window.APP_CONFIG !== 'undefined') {
             const getEl = (id) => document.getElementById(id);
@@ -32,34 +27,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Initialize Logic
-        await PopupLogic.init();
+        await window.PopupLogic.init();
 
         // Initial Renders
         // Fix: Define renderConfig object to be reused recursively
         const renderConfig = {
             reRender: () => {
-                PopupUI.renderConfigTab(renderConfig);
-                PopupUI.renderRunTab(PopupLogic.updateProcessDropdown.bind(PopupLogic));
+                window.PopupUI.renderConfigTab(renderConfig);
+                window.PopupUI.renderRunTab(window.PopupLogic.updateProcessDropdown.bind(PopupLogic));
             },
-            onDeleteProfile: PopupLogic.onDeleteProfile.bind(PopupLogic),
-            onSelectProfile: PopupLogic.onSelectProfile.bind(PopupLogic)
+            onDeleteProfile: window.PopupLogic.onDeleteProfile.bind(PopupLogic),
+            onSelectProfile: window.PopupLogic.onSelectProfile.bind(PopupLogic)
         };
 
         // Initial Renders
-        PopupUI.renderRunTab(PopupLogic.updateProcessDropdown.bind(PopupLogic));
-        PopupUI.renderConfigTab(renderConfig);
+        window.PopupUI.renderRunTab(window.PopupLogic.updateProcessDropdown.bind(PopupLogic));
+        window.PopupUI.renderConfigTab(renderConfig);
 
         // Bind Tools Tab
-        PopupUI.bindToolsTabEvent();
+        window.PopupUI.bindToolsTabEvent();
 
         // Listen for Background Updates
         chrome.runtime.onMessage.addListener((request) => {
             if (request.action === "UI_UPDATE" && request.data) {
-                PopupLogic.updateStatusFromBg();
+                window.PopupLogic.updateStatusFromBg();
             } else if (request.action === "quota_low_warning") {
-                PopupUI.showToast("⚠️ Bộ nhớ đầy! Hãy xóa bớt Profile cũ.", 'warning');
+                window.PopupUI.showToast("⚠️ Bộ nhớ đầy! Hãy xóa bớt Profile cũ.", 'warning');
             } else if (request.action === "error_occurred") {
-                PopupUI.showToast(`Lỗi: ${request.error}`, 'error');
+                window.PopupUI.showToast(`Lỗi: ${request.error}`, 'error');
             }
         });
 
@@ -76,49 +71,49 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const has = await chrome.permissions.contains({ origins: [origin] });
                 if (has) return true;
                 const granted = await chrome.permissions.request({ origins: [origin] });
-                if (!granted) { PopupUI.showToast(`⚠️ Cần quyền truy cập ${url.hostname}`, 'warning'); return false; }
+                if (!granted) { window.PopupUI.showToast(`⚠️ Cần quyền truy cập ${url.hostname}`, 'warning'); return false; }
                 return true;
             } catch (e) { return false; }
         }
 
         async function startNewBatch(rows) {
             try {
-                if (!Array.isArray(rows) || rows.length === 0) throw new Error(ERRORS.NO_ROWS);
-                if (!DataManager.currentCsvData) throw new Error(ERRORS.NO_DATA);
+                if (!Array.isArray(rows) || rows.length === 0) throw new Error(window.ERRORS.NO_ROWS);
+                if (!window.DataManager.currentCsvData) throw new Error(window.ERRORS.NO_DATA);
                 const hasPerm = await requestTabPermission();
                 if (!hasPerm) return;
 
                 const pid = dom.input.profile.value; const procId = dom.input.process.value;
-                const p = DataManager.appData.profiles.find(x => x.id === pid);
+                const p = window.DataManager.appData.profiles.find(x => x.id === pid);
                 const proc = p ? p.processes.find(x => x.id === procId) : null;
-                if (!p || !proc) throw new Error(ERRORS.NO_PROCESS);
+                if (!p || !proc) throw new Error(window.ERRORS.NO_PROCESS);
 
-                const activeIndices = Utils.parseActiveColumns(proc.activeCols || "");
+                const activeIndices = window.Utils.parseActiveColumns(proc.activeCols || "");
 
                 // IDENTIFIER COLUMN LOGIC
                 let idColIndex = 1;
                 if (proc.batchCols) {
-                    const batchIndices = Utils.parseActiveColumns(proc.batchCols);
+                    const batchIndices = window.Utils.parseActiveColumns(proc.batchCols);
                     if (batchIndices && batchIndices.length > 0) idColIndex = batchIndices[0];
                 } else if (proc.col1) { // fallback
-                    idColIndex = Utils.columnLetterToIndex(proc.col1);
+                    idColIndex = window.Utils.columnLetterToIndex(proc.col1);
                 }
 
                 const queue = [];
                 rows.forEach(r => {
                     const idx = r - 1;
-                    if (DataManager.currentCsvData[idx]) {
-                        const { xpaths, values } = Utils.filterData(DataManager.currentCsvData[0], DataManager.currentCsvData[idx], activeIndices);
+                    if (window.DataManager.currentCsvData[idx]) {
+                        const { xpaths, values } = window.Utils.filterData(window.DataManager.currentCsvData[0], window.DataManager.currentCsvData[idx], activeIndices);
 
                         const rowData = {};
-                        const fullRow = DataManager.currentCsvData[idx];
+                        const fullRow = window.DataManager.currentCsvData[idx];
                         for (let i = 0; i < fullRow.length; i++) {
-                            rowData[Utils.indexToColumnLetter(i)] = fullRow[i] || '';
+                            rowData[window.Utils.indexToColumnLetter(i)] = fullRow[i] || '';
                         }
 
                         queue.push({
                             rowIndex: r,
-                            itemName: DataManager.currentCsvData[idx][idColIndex],
+                            itemName: window.DataManager.currentCsvData[idx][idColIndex],
                             xpaths: xpaths,
                             values: values,
                             rowData: rowData
@@ -126,23 +121,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
 
-                if (queue.length === 0) throw new Error(ERRORS.EMPTY_QUEUE);
+                if (queue.length === 0) throw new Error(window.ERRORS.EMPTY_QUEUE);
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                if (!tab) throw new Error(ERRORS.NO_TAB);
+                if (!tab) throw new Error(window.ERRORS.NO_TAB);
 
                 chrome.runtime.sendMessage({
                     action: "START_BATCH", queue: queue, tabId: tab.id, profileName: p.name, processName: proc.name
                 }, (response) => {
                     if (chrome.runtime.lastError) return;
-                    if (response && !response.success) PopupUI.showToast(response.error, 'error');
+                    if (response && !response.success) window.PopupUI.showToast(response.error, 'error');
                 });
-            } catch (e) { PopupUI.showToast(e.message, 'error'); }
+            } catch (e) { window.PopupUI.showToast(e.message, 'error'); }
         }
 
 
         // --- HANDLERS ---
-        dom.btn.run.onclick = () => { try { startNewBatch(Utils.parseRange(dom.input.range.value)); } catch (e) { PopupUI.showToast(e.message, 'error'); } };
-        dom.btn.batchRun.onclick = () => { try { const rows = (DataManager.appData.selectedBatchRows || []).map(Number); startNewBatch(rows); } catch (e) { PopupUI.showToast(e.message, 'error'); } };
+        dom.btn.run.onclick = () => { try { startNewBatch(window.Utils.parseRange(dom.input.range.value)); } catch (e) { window.PopupUI.showToast(e.message, 'error'); } };
+        dom.btn.batchRun.onclick = () => { try { const rows = (window.DataManager.appData.selectedBatchRows || []).map(Number); startNewBatch(rows); } catch (e) { window.PopupUI.showToast(e.message, 'error'); } };
 
         // Batch Search Handler
         if (dom.input.searchBatch) {
@@ -169,20 +164,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const gid = dom.input.macroGid ? dom.input.macroGid.value.trim() : "0";
 
-                if (DataManager.appData) {
-                    DataManager.appData.macroSheetConfig = { url, gid };
-                    await DataManager.save();
+                if (window.DataManager.appData) {
+                    window.DataManager.appData.macroSheetConfig = { url, gid };
+                    await window.DataManager.save();
                 }
             };
         }
 
-        dom.btn.addProfile.onclick = PopupLogic.saveProfileFn.bind(PopupLogic);
+        dom.btn.addProfile.onclick = window.PopupLogic.saveProfileFn.bind(PopupLogic);
 
         // VARS HANDLERS
-        dom.vars.btnRefresh.onclick = () => PopupUI.renderVariablesTab();
+        dom.vars.btnRefresh.onclick = () => window.PopupUI.renderVariablesTab();
         dom.vars.btnClear.onclick = () => {
             if (confirm("Xóa tất cả biến?")) {
-                chrome.runtime.sendMessage({ action: "CLEAR_VARIABLES" }, () => PopupUI.renderVariablesTab());
+                chrome.runtime.sendMessage({ action: "CLEAR_VARIABLES" }, () => window.PopupUI.renderVariablesTab());
             }
         };
         dom.vars.btnExport.onclick = () => {
@@ -193,33 +188,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         };
 
-        dom.btn.addProcess.onclick = PopupLogic.saveProcessFn.bind(PopupLogic);
+        dom.btn.addProcess.onclick = window.PopupLogic.saveProcessFn.bind(PopupLogic);
 
         // --- RENDERERS ---
-        dom.tabs.run.onclick = () => PopupUI.switchTab('run');
-        // dom.tabs.macros.onclick = () => { PopupUI.switchTab('macros'); PopupUI.renderMacrosTab(); }; // REMOVED
-        dom.tabs.config.onclick = () => PopupUI.switchTab('config');
-        dom.tabs.tools.onclick = () => PopupUI.switchTab('tools');
-        dom.tabs.ai.onclick = () => PopupUI.switchTab('ai');
+        dom.tabs.run.onclick = () => window.PopupUI.switchTab('run');
+        // dom.tabs.macros.onclick = () => { window.PopupUI.switchTab('macros'); window.PopupUI.renderMacrosTab(); }; // REMOVED
+        dom.tabs.config.onclick = () => window.PopupUI.switchTab('config');
+        dom.tabs.tools.onclick = () => window.PopupUI.switchTab('tools');
+        dom.tabs.ai.onclick = () => window.PopupUI.switchTab('ai');
 
         // Sub-tab event listeners
-        if (dom.subTabs.vars) dom.subTabs.vars.onclick = () => PopupUI.switchSubTab('vars');
-        if (dom.subTabs.xpath) dom.subTabs.xpath.onclick = () => PopupUI.switchSubTab('xpath');
-        if (dom.subTabs.backup) dom.subTabs.backup.onclick = () => PopupUI.switchSubTab('backup');
-        if (dom.subTabs.macros) dom.subTabs.macros.onclick = () => { PopupUI.switchSubTab('macros'); PopupUI.renderMacrosTab(); };
+        if (dom.subTabs.vars) dom.subTabs.vars.onclick = () => window.PopupUI.switchSubTab('vars');
+        if (dom.subTabs.xpath) dom.subTabs.xpath.onclick = () => window.PopupUI.switchSubTab('xpath');
+        if (dom.subTabs.backup) dom.subTabs.backup.onclick = () => window.PopupUI.switchSubTab('backup');
+        if (dom.subTabs.macros) dom.subTabs.macros.onclick = () => { window.PopupUI.switchSubTab('macros'); window.PopupUI.renderMacrosTab(); };
 
         // Wire radio mode switchers
         const radioSingle = document.querySelector('input[name="runMode"][value="single"]');
         const radioBatch = document.querySelector('input[name="runMode"][value="batch"]');
         if (radioSingle) radioSingle.addEventListener('change', () => {
-            DataManager.appData.runMode = 'single'; DataManager.save();
-            PopupUI.switchRunMode('single');
+            window.DataManager.appData.runMode = 'single'; window.DataManager.save();
+            window.PopupUI.switchRunMode('single');
         });
         if (radioBatch) radioBatch.addEventListener('change', () => {
-            DataManager.appData.runMode = 'batch'; DataManager.save();
-            PopupUI.switchRunMode('batch');
+            window.DataManager.appData.runMode = 'batch'; window.DataManager.save();
+            window.PopupUI.switchRunMode('batch');
             const o = dom.input.process.selectedOptions[0];
-            if (o) PopupLogic.loadCsvForProcess(o.dataset.url, o.dataset.gid, o.dataset.batchCols);
+            if (o) window.PopupLogic.loadCsvForProcess(o.dataset.url, o.dataset.gid, o.dataset.batchCols);
         });
 
         // Refresh Button Handlers
@@ -227,46 +222,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnRefreshBatch) {
             btnRefreshBatch.onclick = () => {
                 const o = dom.input.process.selectedOptions[0];
-                if (o) PopupLogic.loadCsvForProcess(o.dataset.url, o.dataset.gid, o.dataset.batchCols, true);
-                else PopupUI.showToast("Vui lòng chọn quy trình trước", "warning");
+                if (o) window.PopupLogic.loadCsvForProcess(o.dataset.url, o.dataset.gid, o.dataset.batchCols, true);
+                else window.PopupUI.showToast("Vui lòng chọn quy trình trước", "warning");
             };
         }
         if (dom.btn.btnRefreshSingle) {
             dom.btn.btnRefreshSingle.onclick = () => {
                 const o = dom.input.process.selectedOptions[0];
-                if (o) PopupLogic.loadCsvForProcess(o.dataset.url, o.dataset.gid, o.dataset.batchCols, true);
-                else PopupUI.showToast("Vui lòng chọn quy trình trước", "warning");
+                if (o) window.PopupLogic.loadCsvForProcess(o.dataset.url, o.dataset.gid, o.dataset.batchCols, true);
+                else window.PopupUI.showToast("Vui lòng chọn quy trình trước", "warning");
             };
         }
 
         // SUB TABS
-        dom.subTabs.vars.onclick = () => { PopupUI.switchSubTab('vars'); PopupUI.renderVariablesTab(); };
-        dom.subTabs.xpath.onclick = () => { PopupUI.switchSubTab('xpath'); if (PopupUI.renderXPathTab) PopupUI.renderXPathTab(); };
-        dom.subTabs.backup.onclick = () => { PopupUI.switchSubTab('backup'); PopupUI.renderBackupTab(); };
+        dom.subTabs.vars.onclick = () => { window.PopupUI.switchSubTab('vars'); window.PopupUI.renderVariablesTab(); };
+        dom.subTabs.xpath.onclick = () => { window.PopupUI.switchSubTab('xpath'); if (window.PopupUI.renderXPathTab) window.PopupUI.renderXPathTab(); };
+        dom.subTabs.backup.onclick = () => { window.PopupUI.switchSubTab('backup'); window.PopupUI.renderBackupTab(); };
 
         dom.input.profile.onchange = async (e) => {
-            DataManager.appData.lastProfileId = e.target.value;
-            DataManager.appData.lastProcessId = "";
-            await DataManager.save();
-            PopupLogic.updateProcessDropdown(e.target.value);
+            window.DataManager.appData.lastProfileId = e.target.value;
+            window.DataManager.appData.lastProcessId = "";
+            await window.DataManager.save();
+            window.PopupLogic.updateProcessDropdown(e.target.value);
         };
 
         dom.input.process.onchange = async (e) => {
-            DataManager.appData.lastProcessId = e.target.value;
-            await DataManager.save();
+            window.DataManager.appData.lastProcessId = e.target.value;
+            await window.DataManager.save();
             const o = dom.input.process.selectedOptions[0];
-            if (o) PopupLogic.loadCsvForProcess(o.dataset.url, o.dataset.gid, o.dataset.batchCols);
+            if (o) window.PopupLogic.loadCsvForProcess(o.dataset.url, o.dataset.gid, o.dataset.batchCols);
         };
 
         const handleCtrl = (action) => chrome.runtime.sendMessage({ action: action });
-        dom.btn.pause.onclick = dom.btn.batchPause.onclick = () => handleCtrl(PopupLogic.currentStatus === "RUNNING" ? "PAUSE_BATCH" : "RESUME_BATCH");
+        dom.btn.pause.onclick = dom.btn.batchPause.onclick = () => handleCtrl(window.PopupLogic.currentStatus === "RUNNING" ? "PAUSE_BATCH" : "RESUME_BATCH");
 
         dom.btn.stop.onclick = dom.btn.batchStop.onclick = () => {
             if (confirm("Dừng hẳn quy trình?")) {
                 chrome.runtime.sendMessage({ action: "STOP_BATCH" });
             }
         };
-        dom.input.range.onchange = async (e) => { DataManager.appData.lastRange = e.target.value; await DataManager.save(); };
+        dom.input.range.onchange = async (e) => { window.DataManager.appData.lastRange = e.target.value; await window.DataManager.save(); };
 
         // --- XPATH PICKER LOGIC ---
         let xpathPickerActive = false;
@@ -280,8 +275,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         dom.btn.startPicker.onclick = async () => {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (!tab) return PopupUI.showToast('Không tìm thấy tab!', 'error');
-            if (tab.url.startsWith('chrome://')) return PopupUI.showToast('Không thể chạy trên trang nội bộ Chrome!', 'warning');
+            if (!tab) return window.PopupUI.showToast('Không tìm thấy tab!', 'error');
+            if (tab.url.startsWith('chrome://')) return window.PopupUI.showToast('Không thể chạy trên trang nội bộ Chrome!', 'warning');
 
             try {
                 await chrome.tabs.sendMessage(tab.id, { action: 'XPATH_PICKER_START' });
@@ -308,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (msg.includes("Could not establish connection") || msg.includes("Receiving end does not exist")) {
                         msg = "⚠️ Hãy reload (F5) trang web và thử lại!";
                     }
-                    PopupUI.showToast(msg, 'error');
+                    window.PopupUI.showToast(msg, 'error');
                     xpathPickerActive = false;
                     renderXPathTab(); // ensure UI reset
                 }
@@ -318,7 +313,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         function onPickerStarted() {
             xpathPickerActive = true;
             renderXPathTab();
-            PopupUI.showToast('🎯 Chế độ chọn XPath đã bật!', 'success');
+            window.PopupUI.showToast('🎯 Chế độ chọn XPath đã bật!', 'success');
         }
 
         dom.btn.stopPicker.onclick = stopXPathPicker;
@@ -331,7 +326,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (tab) {
                     await chrome.tabs.sendMessage(tab.id, { action: 'XPATH_PICKER_STOP' });
                 }
-                PopupUI.showToast('⏹️ Đã thoát chế độ XPath', 'info');
+                window.PopupUI.showToast('⏹️ Đã thoát chế độ XPath', 'info');
             } catch (e) { console.error(e); }
         }
 
@@ -366,57 +361,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         // BACKUP HANDLERS
         dom.btn.export.onclick = () => {
             try {
-                const json = DataManager.exportProfiles();
+                const json = window.DataManager.exportProfiles();
                 navigator.clipboard.writeText(json).then(() => {
-                    DataManager.appData.lastBackupTime = Date.now();
-                    DataManager.save();
-                    PopupUI.renderBackupTab();
-                    PopupUI.showToast("✅ Copied to clipboard!", 'success');
+                    window.DataManager.appData.lastBackupTime = Date.now();
+                    window.DataManager.save();
+                    window.PopupUI.renderBackupTab();
+                    window.PopupUI.showToast("✅ Copied to clipboard!", 'success');
                 });
-            } catch (e) { PopupUI.showToast("Export failed: " + e.message, 'error'); }
+            } catch (e) { window.PopupUI.showToast("Export failed: " + e.message, 'error'); }
         };
 
         dom.btn.import.onclick = async () => {
             try {
                 const text = await navigator.clipboard.readText();
-                if (!text) return PopupUI.showToast("Clipboard empty!", 'warning');
+                if (!text) return window.PopupUI.showToast("Clipboard empty!", 'warning');
 
-                const res = await DataManager.importProfiles(text);
+                const res = await window.DataManager.importProfiles(text);
 
                 if (res.success) {
-                    PopupUI.showToast(`✅ Imported: ${res.imported} new profiles`, 'success');
-                    PopupUI.renderBackupTab();
-                    PopupLogic.onDeleteProfile(null);
+                    window.PopupUI.showToast(`✅ Imported: ${res.imported} new profiles`, 'success');
+                    window.PopupUI.renderBackupTab();
+                    window.PopupLogic.onDeleteProfile(null);
                 } else if (res.conflicts) {
                     const names = res.conflicts.map(c => c.name).join(', ');
                     const overwrite = confirm(`⚠️ ${res.conflicts.length} profile(s) already exist: ${names}\n\nOverwrite existing profiles?\n\nOK = Overwrite | Cancel = Skip`);
 
-                    const mergeRes = await DataManager.mergeProfiles(res.data, overwrite);
+                    const mergeRes = await window.DataManager.mergeProfiles(res.data, overwrite);
                     if (mergeRes.success) {
-                        PopupUI.showToast(`✅ Imported: ${mergeRes.imported} new, ${mergeRes.updated} updated`, 'success');
-                        PopupUI.renderBackupTab();
-                        PopupLogic.onDeleteProfile(null);
+                        window.PopupUI.showToast(`✅ Imported: ${mergeRes.imported} new, ${mergeRes.updated} updated`, 'success');
+                        window.PopupUI.renderBackupTab();
+                        window.PopupLogic.onDeleteProfile(null);
                     }
                 } else {
-                    PopupUI.showToast("❌ Error: " + res.error, 'error');
+                    window.PopupUI.showToast("❌ Error: " + res.error, 'error');
                 }
-            } catch (e) { PopupUI.showToast("❌ " + e.message, 'error'); }
+            } catch (e) { window.PopupUI.showToast("❌ " + e.message, 'error'); }
         };
 
         dom.btn.clear.onclick = async () => {
             if (confirm("⚠️ Xóa tất cả dữ liệu?\n\nThao tác này KHÔNG THỂ hoàn tác!")) {
-                DataManager.appData.profiles = [];
-                await DataManager.save();
-                PopupUI.renderBackupTab();
-                PopupLogic.onDeleteProfile(null);
-                PopupUI.showToast("🗑️ Đã xóa dữ liệu.", 'success');
+                window.DataManager.appData.profiles = [];
+                await window.DataManager.save();
+                window.PopupUI.renderBackupTab();
+                window.PopupLogic.onDeleteProfile(null);
+                window.PopupUI.showToast("🗑️ Đã xóa dữ liệu.", 'success');
             }
         };
 
         // MACRO IMPORT/EXPORT
         // MACRO IMPORT/EXPORT
         if (dom.btn.loadMacros) {
-            dom.btn.loadMacros.onclick = PopupLogic.syncMacrosFromSheet.bind(PopupLogic);
+            dom.btn.loadMacros.onclick = window.PopupLogic.syncMacrosFromSheet.bind(PopupLogic);
         }
 
         if (dom.btn.importMacros) {
@@ -425,21 +420,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 try {
                     const imported = JSON.parse(text);
                     if (typeof imported !== 'object' || Array.isArray(imported)) throw new Error('Invalid JSON format');
-                    Object.keys(imported).forEach(name => { DataManager.validateMacro(imported[name]); });
-                    DataManager.appData.macros = { ...DataManager.appData.macros, ...imported };
-                    await DataManager.save();
-                    PopupUI.renderMacrosTab();
-                    PopupUI.showToast(`✅ Imported ${Object.keys(imported).length} macros`, 'success');
-                } catch (e) { PopupUI.showToast(`❌ Import failed: ${e.message}`, 'error'); }
+                    Object.keys(imported).forEach(name => { window.DataManager.validateMacro(imported[name]); });
+                    window.DataManager.appData.macros = { ...window.DataManager.appData.macros, ...imported };
+                    await window.DataManager.save();
+                    window.PopupUI.renderMacrosTab();
+                    window.PopupUI.showToast(`✅ Imported ${Object.keys(imported).length} macros`, 'success');
+                } catch (e) { window.PopupUI.showToast(`❌ Import failed: ${e.message}`, 'error'); }
             };
         }
 
         if (dom.btn.exportMacros) {
             dom.btn.exportMacros.onclick = async () => {
-                const macros = DataManager.appData.macros || {};
+                const macros = window.DataManager.appData.macros || {};
                 const json = JSON.stringify(macros, null, 2);
                 await navigator.clipboard.writeText(json);
-                PopupUI.showToast(`📋 Copied ${Object.keys(macros).length} macros to clipboard!`, 'success');
+                window.PopupUI.showToast(`📋 Copied ${Object.keys(macros).length} macros to clipboard!`, 'success');
             };
         }
 
@@ -449,10 +444,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 1. Auto-save Config
         dom.input.aiApiKey.oninput = async () => {
             console.log("[AI] API Key changing...");
-            if (DataManager.appData) {
-                DataManager.appData.aiConfig = DataManager.appData.aiConfig || {};
-                DataManager.appData.aiConfig.apiKey = dom.input.aiApiKey.value.trim();
-                await DataManager.save();
+            if (window.DataManager.appData) {
+                window.DataManager.appData.aiConfig = window.DataManager.appData.aiConfig || {};
+                window.DataManager.appData.aiConfig.apiKey = dom.input.aiApiKey.value.trim();
+                await window.DataManager.save();
                 console.log("[AI] API Key saved.");
             }
         };
@@ -461,10 +456,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             let val = dom.input.aiGid.value.trim();
             console.log("[AI] GID/URL Input:", val);
 
-            if (DataManager.appData) {
-                DataManager.appData.aiConfig = DataManager.appData.aiConfig || {};
-                DataManager.appData.aiConfig.gid = val;
-                await DataManager.save();
+            if (window.DataManager.appData) {
+                window.DataManager.appData.aiConfig = window.DataManager.appData.aiConfig || {};
+                window.DataManager.appData.aiConfig.gid = val;
+                await window.DataManager.save();
                 console.log("[AI] GID Config saved.");
             }
         };
@@ -473,9 +468,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (dom.input.aiTrigger) {
             dom.input.aiTrigger.onchange = async () => {
                 const val = dom.input.aiTrigger.value;
-                if (DataManager.appData) {
-                    DataManager.appData.lastTrigger = val;
-                    await DataManager.save();
+                if (window.DataManager.appData) {
+                    window.DataManager.appData.lastTrigger = val;
+                    await window.DataManager.save();
                     console.log("[AI] Trigger saved:", val);
                 }
             };
@@ -485,17 +480,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const apiKey = dom.input.aiApiKey.value.trim();
             const gid = dom.input.aiGid.value.trim();
 
-            if (!apiKey) return PopupUI.showToast("Cần nhập API Key!", 'error');
-            if (!gid) return PopupUI.showToast("Cần nhập Sheet GID (hoặc Link)!", 'error');
+            if (!apiKey) return window.PopupUI.showToast("Cần nhập API Key!", 'error');
+            if (!gid) return window.PopupUI.showToast("Cần nhập Sheet GID (hoặc Link)!", 'error');
 
             // Save first
-            if (DataManager.appData) {
-                DataManager.appData.aiConfig = { apiKey, gid };
-                await DataManager.save();
+            if (window.DataManager.appData) {
+                window.DataManager.appData.aiConfig = { apiKey, gid };
+                await window.DataManager.save();
             }
 
             try {
-                PopupUI.updateAiStatus("Checking Connection...", "blue");
+                window.PopupUI.updateAiStatus("Checking Connection...", "blue");
 
                 // REAL TEST: Fetch Prompts
                 if (!window.AIEngine) {
@@ -508,16 +503,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log("Prompts fetched:", prompts);
 
                 if (prompts.length === 0) {
-                    PopupUI.showToast("Connected, but found NO prompts in sheet.", 'warning');
-                    PopupUI.updateAiStatus("Empty Sheet", "orange");
+                    window.PopupUI.showToast("Connected, but found NO prompts in sheet.", 'warning');
+                    window.PopupUI.updateAiStatus("Empty Sheet", "orange");
                 } else {
-                    PopupUI.showToast(`✅ Connection OK! Found ${prompts.length} prompts.`, 'success');
-                    PopupUI.updateAiStatus("Ready", "green");
+                    window.PopupUI.showToast(`✅ Connection OK! Found ${prompts.length} prompts.`, 'success');
+                    window.PopupUI.updateAiStatus("Ready", "green");
                 }
 
             } catch (e) {
-                PopupUI.showToast("Connection Failed: " + e.message, 'error');
-                PopupUI.updateAiStatus("Error", "red");
+                window.PopupUI.showToast("Connection Failed: " + e.message, 'error');
+                window.PopupUI.updateAiStatus("Error", "red");
             }
         };
 
@@ -526,9 +521,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const gid = dom.input.aiGid.value.trim();
             const trigger = dom.input.aiTrigger.value;
 
-            if (!apiKey || !gid) return PopupUI.showToast("Thiếu cấu hình AI!", 'error');
+            if (!apiKey || !gid) return window.PopupUI.showToast("Thiếu cấu hình AI!", 'error');
 
-            PopupUI.updateAiStatus("Scanning & Generating...", "blue");
+            window.PopupUI.updateAiStatus("Scanning & Generating...", "blue");
 
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (!tab) return;
@@ -537,8 +532,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const lastError = chrome.runtime.lastError;
                 if (lastError) {
                     console.error("Msg Error:", lastError);
-                    PopupUI.showToast("Error: Content script not loaded. Reload page!", 'error');
-                    PopupUI.updateAiStatus("Conn. Error", "red");
+                    window.PopupUI.showToast("Error: Content script not loaded. Reload page!", 'error');
+                    window.PopupUI.updateAiStatus("Conn. Error", "red");
                     return;
                 }
 
@@ -546,10 +541,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     try {
                         if (!window.AIEngine) throw new Error("AIEngine module not loaded");
 
-                        PopupUI.updateAiStatus("Fetching Prompts...", "blue");
+                        window.PopupUI.updateAiStatus("Fetching Prompts...", "blue");
                         const prompts = await window.AIEngine.fetchPrompts(gid);
 
-                        PopupUI.updateAiStatus("AI Thinking...", "purple");
+                        window.PopupUI.updateAiStatus("AI Thinking...", "purple");
                         const promptTemplate = prompts.find(p => p.trigger === trigger)?.prompt || prompts[0]?.prompt;
 
                         if (!promptTemplate) throw new Error("No prompt found for trigger: " + trigger);
@@ -558,17 +553,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                         dom.input.aiOutput.value = JSON.stringify(xpaths, null, 2);
                         dom.div.aiResults.style.display = 'block';
-                        PopupUI.updateAiStatus("Done!", "green");
+                        window.PopupUI.updateAiStatus("Done!", "green");
 
                     } catch (e) {
-                        PopupUI.showToast("AI Error: " + e.message, 'error');
-                        PopupUI.updateAiStatus("AI Error", "red");
+                        window.PopupUI.showToast("AI Error: " + e.message, 'error');
+                        window.PopupUI.updateAiStatus("AI Error", "red");
                         console.error(e);
                     }
                 } else {
                     const err = response ? response.error : "Unknown Error";
-                    PopupUI.showToast("Scan Failed: " + err, 'error');
-                    PopupUI.updateAiStatus(err.substring(0, 15) + "...", "red");
+                    window.PopupUI.showToast("Scan Failed: " + err, 'error');
+                    window.PopupUI.updateAiStatus(err.substring(0, 15) + "...", "red");
                 }
             });
         };
@@ -577,14 +572,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const text = dom.input.aiOutput.value;
             if (text) {
                 navigator.clipboard.writeText(text);
-                PopupUI.showToast("Copied to clipboard!", 'success');
+                window.PopupUI.showToast("Copied to clipboard!", 'success');
             }
         };
 
         // Load AI Config
-        if (DataManager.appData && DataManager.appData.aiConfig) {
-            dom.input.aiApiKey.value = DataManager.appData.aiConfig.apiKey || "";
-            dom.input.aiGid.value = DataManager.appData.aiConfig.gid || "";
+        if (window.DataManager.appData && window.DataManager.appData.aiConfig) {
+            dom.input.aiApiKey.value = window.DataManager.appData.aiConfig.apiKey || "";
+            dom.input.aiGid.value = window.DataManager.appData.aiConfig.gid || "";
             console.log("[AI] Loaded Config into UI");
         }
 

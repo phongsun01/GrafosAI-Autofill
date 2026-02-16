@@ -1,8 +1,6 @@
 // MODULE: Popup UI (V1.1 - Dynamic Batch Cols)
-import { DataManager } from './data-manager.js';
-import { Utils } from './utils.js';
 
-export const PopupUI = {
+window.PopupUI = {
     // DOM Cache
     dom: {},
 

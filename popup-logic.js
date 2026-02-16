@@ -1,9 +1,7 @@
 // MODULE: Popup Logic
 // Handles business logic, data loading, and state management
-import { DataManager } from './data-manager.js';
-import { PopupUI } from './popup-ui.js';
 
-export const PopupLogic = {
+window.PopupLogic = {
     // State
     editingProfileId: null,
     editingProcessId: null,
