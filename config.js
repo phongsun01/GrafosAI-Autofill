@@ -96,5 +96,21 @@ window.APP_CONFIG = {
 
         // Enable URL sanitization
         sanitizeUrls: true
+    },
+
+    // --- LOGGING SETTINGS ---
+    logging: {
+        // Log level: 'debug', 'info', 'warn', 'error', 'none'
+        level: 'info',
+
+        // Enable structured logging
+        structured: true
+    },
+
+    // --- RATE LIMITING SETTINGS ---
+    rateLimiting: {
+        // Gemini API rate limit (requests per minute)
+        geminiMaxRequests: 60,
+        geminiTimeWindow: 60000 // 1 minute in ms
     }
 };

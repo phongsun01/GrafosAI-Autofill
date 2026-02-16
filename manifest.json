@@ -8,6 +8,8 @@
       "js": [
         "papaparse.min.js",
         "constants.js",
+        "logger.js",
+        "rate-limiter.js",
         "utils.js",
         "variables-manager.js",
         "data-manager.js",
@@ -47,6 +49,20 @@
     "service_worker": "background.js",
     "type": "module"
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "config.js",
+        "logger.js",
+        "rate-limiter.js",
+        "utils.js",
+        "ai-engine.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
   "icons": {
     "16": "icon.png",
     "48": "icon.png",

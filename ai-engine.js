@@ -112,11 +112,11 @@ window.AIEngine = {
         // [PERFORMANCE] Check cache first
         const now = Date.now();
         if (this.modelCache.model && this.modelCache.timestamp + this.modelCache.TTL > now) {
-            console.log(`[AI] Using cached model: ${this.modelCache.model}`);
+            Logger?.info(`[AI] Using cached model: ${this.modelCache.model}`);
             return this.modelCache.model;
         }
 
-        console.log("[AI] Discovering available models...");
+        Logger?.info("[AI] Discovering available models...");
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models`, {
                 method: 'GET',
@@ -127,7 +127,7 @@ window.AIEngine = {
             });
 
             if (!response.ok) {
-                console.warn("[AI] ListModels failed, using default.");
+                Logger?.warn("[AI] ListModels failed, using default.");
                 return "gemini-1.5-flash";
             }
 
@@ -161,7 +161,7 @@ window.AIEngine = {
                         await chrome.storage.local.set({ modelCache: this.modelCache });
                     }
 
-                    console.log(`[AI] Selected best model: ${fullName} (cached for 24h)`);
+                    Logger?.info(`[AI] Selected best model: ${fullName} (cached for 24h)`);
                     return modelName;
                 }
             }
@@ -177,14 +177,14 @@ window.AIEngine = {
                     await chrome.storage.local.set({ modelCache: this.modelCache });
                 }
 
-                console.log(`[AI] Selected fallback model: ${candidates[0].name}`);
+                Logger?.info(`[AI] Selected fallback model: ${candidates[0].name}`);
                 return modelName;
             }
 
             return "gemini-1.5-flash";
 
         } catch (e) {
-            console.error("[AI] Discovery error:", e);
+            Logger?.error("[AI] Discovery error:", e);
             return "gemini-1.5-flash";
         }
     },
@@ -215,15 +215,31 @@ window.AIEngine = {
             modelName = modelName.replace("models/", "");
         }
 
-        console.log(`[AI] Using Model: ${modelName}`);
+        Logger?.info(`[AI] Using Model: ${modelName}`);
 
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
         const fullPrompt = `${prompt}\n\nTarget Form HTML:\n${html}\n\nReturn JSON format: [{"label": "...", "xpath": "..."}]`;
 
-        // [RELIABILITY] Retry wrapper
+        // [RELIABILITY] Retry wrapper with rate limiting
         for (let attempt = 0; attempt < retries; attempt++) {
             try {
-                const response = await fetch(API_URL, {
+                // [RATE LIMITING] Wrap API call with rate limiter
+                const response = await (window.GeminiRateLimiter?.throttle(async () => {
+                    return await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Goog-Api-Key': safeKey
+                        },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: fullPrompt }] }],
+                            generationConfig: {
+                                responseMimeType: "application/json",
+                                temperature: 0.2
+                            }
+                        })
+                    });
+                }) || fetch(API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -236,7 +252,7 @@ window.AIEngine = {
                             temperature: 0.2
                         }
                     })
-                });
+                }));
 
                 if (!response.ok) {
                     const errorData = await response.json();
