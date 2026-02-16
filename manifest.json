@@ -8,6 +8,7 @@
       "js": [
         "papaparse.min.js",
         "constants.js",
+        "config.js",
         "logger.js",
         "rate-limiter.js",
         "utils.js",

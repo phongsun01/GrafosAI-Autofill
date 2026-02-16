@@ -20,8 +20,15 @@ window.Logger = {
      * Initialize logger with config
      */
     init() {
-        // Auto-detect environment
-        const isDev = !('update_url' in chrome.runtime.getManifest());
+        // Auto-detect environment (only if chrome.runtime is available)
+        let isDev = true; // Default to dev mode
+        try {
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) {
+                isDev = !('update_url' in chrome.runtime.getManifest());
+            }
+        } catch (e) {
+            // Fallback to dev mode if detection fails
+        }
 
         // Set log level based on environment
         this.currentLevel = isDev ? this.levels.debug : this.levels.info;

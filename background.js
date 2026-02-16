@@ -1,6 +1,15 @@
 // MODULE: Background Service Worker (V2.4 - Stop Fix)
 import { Utils, storageLocal } from './utils.js';
 
+// [LOGGING] Inline Logger for service worker (can't load external scripts)
+const Logger = {
+    info: (...args) => console.log('[INFO]', ...args),
+    warn: (...args) => console.warn('[WARN]', ...args),
+    error: (...args) => console.error('[ERROR]', ...args),
+    debug: (...args) => console.log('[DEBUG]', ...args)
+};
+
+
 const defaultState = {
     status: "IDLE",
     pausedBySheet: false,

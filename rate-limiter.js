@@ -109,8 +109,14 @@ class RateLimiter {
     }
 }
 
-// Create global instance for Gemini API
-window.GeminiRateLimiter = new RateLimiter(
-    window.APP_CONFIG?.rateLimiting?.geminiMaxRequests || 60,
-    window.APP_CONFIG?.rateLimiting?.geminiTimeWindow || 60000
-);
+// Create global instance for Gemini API (only if in browser context)
+if (typeof window !== 'undefined') {
+    try {
+        window.GeminiRateLimiter = new RateLimiter(
+            window.APP_CONFIG?.rateLimiting?.geminiMaxRequests || 60,
+            window.APP_CONFIG?.rateLimiting?.geminiTimeWindow || 60000
+        );
+    } catch (e) {
+        console.warn('[RateLimiter] Failed to initialize:', e);
+    }
+}
