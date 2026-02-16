@@ -335,6 +335,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             bgState.expectingNavigation = false;
                             bgState.status = "PAUSED";
                             bgState.logs = "❌ Navigation timeout. Vui lòng kiểm tra lại.";
+                            markDirty();
                             saveAndBroadcast();
                         }
                     }, navigationTimeout);
