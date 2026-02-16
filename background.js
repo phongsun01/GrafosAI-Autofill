@@ -79,16 +79,17 @@ function getCurrentRowInfo() {
 
 // Content Script Injection Management
 const injectedTabs = new Set();
-const injectionPromises = new Map(); // Track ongoing injections to prevent race conditions
+const injectionLocks = new Map(); // Atomic lock to prevent race conditions
 
 async function ensureContentScript(tabId) {
-    // Check if injection is already in progress FIRST
-    if (injectionPromises.has(tabId)) {
-        return await injectionPromises.get(tabId);
+    // Check if injection is already in progress
+    if (injectionLocks.has(tabId)) {
+        return await injectionLocks.get(tabId);
     }
+
     if (injectedTabs.has(tabId)) return true;
 
-    const injectionPromise = (async () => {
+    const lock = (async () => {
         try {
             // Test if content script is already loaded
             await chrome.tabs.sendMessage(tabId, { action: "PING" });
@@ -109,14 +110,16 @@ async function ensureContentScript(tabId) {
             } catch (injectErr) {
                 throw injectErr;
             }
-        } finally {
-            // Always cleanup the promise tracker
-            injectionPromises.delete(tabId);
         }
     })();
 
-    injectionPromises.set(tabId, injectionPromise);
-    return injectionPromise;
+    injectionLocks.set(tabId, lock);
+    try {
+        return await lock;
+    } finally {
+        // Always cleanup the lock, even if error occurs
+        injectionLocks.delete(tabId);
+    }
 }
 
 // Lifecycle & Memory Management
@@ -146,12 +149,15 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
     }
 
     if (changeInfo.status === 'complete') {
+        // [FIX] Always clear timeout when page loads, even if not expecting navigation
+        if (bgState.targetTabId === tabId && bgState.navigationTimeoutId) {
+            clearTimeout(bgState.navigationTimeoutId);
+            bgState.navigationTimeoutId = null;
+        }
+
         if (bgState.targetTabId === tabId && bgState.status === "RUNNING" && bgState.expectingNavigation) {
             console.log("[Background] Auto-resume after navigation");
             bgState.expectingNavigation = false;
-
-            // Clear timeout safety net
-            if (bgState.navigationTimeoutId) clearTimeout(bgState.navigationTimeoutId);
 
             bgState.logs = "✅ Đã tải xong. Đang tiếp tục...";
             saveAndBroadcast();
@@ -171,6 +177,34 @@ chrome.runtime.onInstalled.addListener(() => {
     injectedTabs.clear();
     console.log('[Background] Extension installed/updated, cleared injectedTabs');
 });
+
+// [NEW] TTL-based Variable Cleanup (Prevent Memory Leak)
+setInterval(() => {
+    const now = Date.now();
+    const maxVarLength = window.APP_CONFIG?.performance?.variables?.maxVarLength || 1000;
+    let cleaned = 0;
+
+    for (const [key, val] of Object.entries(bgState.variables || {})) {
+        // Check TTL (1 hour expiry)
+        if (val && typeof val === 'object' && val._timestamp && now - val._timestamp > 3600000) {
+            delete bgState.variables[key];
+            cleaned++;
+            continue;
+        }
+
+        // Enforce maxVarLength
+        if (typeof val === 'string' && val.length > maxVarLength) {
+            bgState.variables[key] = val.substring(0, maxVarLength);
+            console.warn(`[Cleanup] Truncated variable "${key}" from ${val.length} to ${maxVarLength} chars`);
+        }
+    }
+
+    if (cleaned > 0) {
+        console.log(`[Cleanup] Removed ${cleaned} expired variables`);
+        saveAndBroadcast(true); // Immediate save after cleanup
+    }
+}, 300000); // Every 5 minutes
+
 
 // Messaging
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

@@ -50,12 +50,39 @@ window.SecurityUtils = {
         const sanitized = xpath.replace(/[^\w\s\/\@\[\]\(\)'"=.\-_:*]/g, '');
 
         // Validate basic XPath structure
-        if (!this.isValidXPath(sanitized)) {
-            console.warn('[Security] Invalid XPath structure:', xpath);
-            return '';
+        if (!xpath || typeof xpath !== 'string') {
+            throw new Error('XPath must be a non-empty string');
         }
 
-        return sanitized;
+        const trimmed = xpath.trim();
+
+        // Detect dangerous patterns
+        const dangerousPatterns = [
+            /<script/gi,
+            /javascript:/gi,
+            /onerror\s*=/gi,
+            /onclick\s*=/gi,
+            /onload\s*=/gi,
+            /onmouseover\s*=/gi,
+            /eval\s*\(/gi,
+            /expression\s*\(/gi,
+            /<iframe/gi,
+            /<embed/gi,
+            /<object/gi
+        ];
+
+        for (const pattern of dangerousPatterns) {
+            if (pattern.test(trimmed)) {
+                throw new Error(`Dangerous XPath pattern detected: ${pattern.source}`);
+            }
+        }
+
+        // Additional length check
+        if (trimmed.length > 5000) {
+            throw new Error(`XPath too long (${trimmed.length} chars). Maximum: 5000`);
+        }
+
+        return trimmed;
     },
 
     /**

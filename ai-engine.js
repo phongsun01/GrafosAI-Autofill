@@ -1,6 +1,13 @@
 // ai-engine.js
 
 window.AIEngine = {
+    // [PERFORMANCE] Model Discovery Cache (24h TTL)
+    modelCache: {
+        model: null,
+        timestamp: 0,
+        TTL: 86400000 // 24 hours
+    },
+
     /**
      * Initialize AI Engine
      * @returns {Promise<boolean>}
@@ -89,6 +96,13 @@ window.AIEngine = {
      * @returns {Promise<string>} Model name (e.g. 'models/gemini-1.5-flash')
      */
     async discoverBestModel(apiKey) {
+        // [PERFORMANCE] Check cache first
+        const now = Date.now();
+        if (this.modelCache.model && this.modelCache.timestamp + this.modelCache.TTL > now) {
+            console.log(`[AI] Using cached model: ${this.modelCache.model}`);
+            return this.modelCache.model;
+        }
+
         console.log("[AI] Discovering available models...");
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models`, {
@@ -123,15 +137,24 @@ window.AIEngine = {
             for (const pref of preferredOrder) {
                 if (modelMap.has(pref)) {
                     const fullName = modelMap.get(pref);
-                    console.log(`[AI] Selected best model: ${fullName}`);
-                    return fullName.replace("models/", "");
+                    const modelName = fullName.replace("models/", "");
+
+                    // Update cache
+                    this.modelCache.model = modelName;
+                    this.modelCache.timestamp = now;
+
+                    console.log(`[AI] Selected best model: ${fullName} (cached for 24h)`);
+                    return modelName;
                 }
             }
 
             // Fallback to the first available candidate
             if (candidates.length > 0) {
+                const modelName = candidates[0].name.replace("models/", "");
+                this.modelCache.model = modelName;
+                this.modelCache.timestamp = now;
                 console.log(`[AI] Selected fallback model: ${candidates[0].name}`);
-                return candidates[0].name.replace("models/", "");
+                return modelName;
             }
 
             return "gemini-1.5-flash";
@@ -154,12 +177,10 @@ window.AIEngine = {
         if (!apiKey || typeof apiKey !== 'string') throw new Error("API Key must be a non-empty string");
         if (!html || typeof html !== 'string') throw new Error("HTML must be a non-empty string");
 
-        // [OPTIMIZATION] Limit HTML size to prevent payload issues (100KB limit)
+        // [ERROR BOUNDARY] Reject HTML that's too large instead of silent truncation
         const MAX_HTML_SIZE = 100000;
-        let safeHtml = html;
-        if (safeHtml.length > MAX_HTML_SIZE) {
-            console.warn(`[AI] HTML too large (${safeHtml.length} chars), truncating to ${MAX_HTML_SIZE}...`);
-            safeHtml = safeHtml.substring(0, MAX_HTML_SIZE) + "...[truncated]";
+        if (html.length > MAX_HTML_SIZE) {
+            throw new Error(`HTML too large (${html.length} bytes). Please scan a smaller form section or reduce the page content. Maximum allowed: ${MAX_HTML_SIZE} bytes.`);
         }
 
         const safeKey = apiKey.trim();
@@ -173,7 +194,7 @@ window.AIEngine = {
         console.log(`[AI] Using Model: ${modelName}`);
 
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-        const fullPrompt = `${prompt}\n\nTarget Form HTML:\n${safeHtml}\n\nReturn JSON format: [{"label": "...", "xpath": "..."}]`;
+        const fullPrompt = `${prompt}\n\nTarget Form HTML:\n${html}\n\nReturn JSON format: [{"label": "...", "xpath": "..."}]`;
 
         // [RELIABILITY] Retry wrapper
         for (let attempt = 0; attempt < retries; attempt++) {

@@ -68,7 +68,16 @@ window.APP_CONFIG = {
         maxDomScanNodes: 500,
 
         // Polling interval for waitUrl (ms)
-        urlPollInterval: 500
+        urlPollInterval: 500,
+
+        // Navigation resume delay after page load (ms)
+        navigationResumeDelay: 1500,
+
+        // Retry backoff multiplier (ms)
+        retryBackoffMultiplier: 1000,
+
+        // Model discovery cache TTL (ms) - 24 hours
+        modelCacheTTL: 86400000
     },
 
     // --- SECURITY SETTINGS ---
