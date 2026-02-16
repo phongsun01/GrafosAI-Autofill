@@ -9,6 +9,58 @@ const Logger = {
     debug: (...args) => console.log('[DEBUG]', ...args)
 };
 
+// [FIX] Define storageLocal locally (background has no window.*)
+const storageLocal = {
+    get: (keys) => new Promise((resolve, reject) => {
+        chrome.storage.local.get(keys, (result) => {
+            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+            else resolve(result);
+        });
+    }),
+    set: (items) => new Promise((resolve, reject) => {
+        chrome.storage.local.set(items, () => {
+            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+            else resolve();
+        });
+    }),
+    remove: (keys) => new Promise((resolve, reject) => {
+        chrome.storage.local.remove(keys, () => {
+            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+            else resolve();
+        });
+    })
+};
+
+// [FIX] Define Utils locally (background has no window.*)
+const Utils = {
+    async checkStorageQuota() {
+        try {
+            const estimate = await navigator.storage.estimate();
+            const percentUsed = (estimate.usage / estimate.quota) * 100;
+            if (percentUsed > 90) {
+                Logger.warn(`Storage quota: ${percentUsed.toFixed(1)}% used`);
+                return false;
+            }
+            return true;
+        } catch (e) {
+            Logger.error('Failed to check storage quota:', e);
+            return true; // Assume OK if check fails
+        }
+    },
+    
+    async sendMessageWithRetry(tabId, message, maxRetries = 3) {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await chrome.tabs.sendMessage(tabId, message);
+                return response;
+            } catch (error) {
+                if (i === maxRetries - 1) throw error;
+                await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
+            }
+        }
+    }
+};
+
 
 const defaultState = {
     status: "IDLE",
@@ -38,7 +90,7 @@ function formatDuration(ms) {
 // Load State
 (async () => {
     try {
-        const result = await window.storageLocal.get(['bgState', 'variables']); // Load both
+        const result = await storageLocal.get(['bgState', 'variables']); // Load both
         if (result.bgState) bgState = result.bgState;
         if (result.variables) bgState.variables = result.variables;
     } catch (e) { }
@@ -72,7 +124,7 @@ async function actualSaveAndBroadcast(immediate) {
         return;
     }
 
-    if (!await window.Utils.checkStorageQuota()) {
+    if (!await Utils.checkStorageQuota()) {
         chrome.runtime.sendMessage({ action: "quota_low_warning" }).catch(() => { });
         const { variables, ...stateWithoutVars } = bgState;
         chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
@@ -82,8 +134,8 @@ async function actualSaveAndBroadcast(immediate) {
     try {
         const { variables, ...stateWithoutVars } = bgState;
         await Promise.all([
-            window.storageLocal.set({ bgState: stateWithoutVars }),
-            window.storageLocal.set({ variables: variables })
+            storageLocal.set({ bgState: stateWithoutVars }),
+            storageLocal.set({ variables: variables })
         ]);
 
         isDirty = false; // Reset dirty flag after successful save
@@ -283,7 +335,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                         if (bgState.pausedBySheet) {
                             try {
-                                await window.Utils.sendMessageWithRetry(bgState.targetTabId, { action: "UNPAUSE" });
+                                await Utils.sendMessageWithRetry(bgState.targetTabId, { action: "UNPAUSE" });
                             } catch (err) {
                                 bgState.status = "PAUSED"; bgState.logs = "⚠️ Mất kết nối Tab."; await saveAndBroadcast();
                             }
@@ -419,7 +471,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                 console.log(`[DEBUG] SET_VARIABLE: key="${request.key}", value="${value}", stored as:`, bgState.variables[request.key]);
 
-                await window.storageLocal.set({ variables: bgState.variables });
+                await storageLocal.set({ variables: bgState.variables });
                 sendResponse({ success: true });
                 return true;
             }
@@ -433,7 +485,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === "DELETE_VARIABLE") {
                 if (bgState.variables && bgState.variables[request.key]) {
                     delete bgState.variables[request.key];
-                    await window.storageLocal.set({ bgState: bgState });
+                    await storageLocal.set({ bgState: bgState });
                     sendResponse({ success: true });
                 } else {
                     sendResponse({ success: false });
@@ -443,7 +495,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             if (request.action === "CLEAR_VARIABLES") {
                 bgState.variables = {};
-                await window.storageLocal.set({ bgState: bgState });
+                await storageLocal.set({ bgState: bgState });
                 sendResponse({ success: true });
                 return;
             }
@@ -451,7 +503,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             // --- MACRO SYSTEM HANDLERS ---
             if (request.action === "GET_MACROS") {
                 try {
-                    const result = await window.storageLocal.get(['appData']);
+                    const result = await storageLocal.get(['appData']);
                     const macros = result.appData?.macros || {};
                     sendResponse({ macros: macros });
                 } catch (e) {
@@ -484,7 +536,7 @@ async function runNextItem(retryCount = 0) {
 
         try {
             await ensureContentScript(bgState.targetTabId);
-            await window.Utils.sendMessageWithRetry(bgState.targetTabId, {
+            await Utils.sendMessageWithRetry(bgState.targetTabId, {
                 action: "fill_single_row",
                 xpaths: item.xpaths,
                 values: item.values,
