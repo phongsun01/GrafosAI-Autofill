@@ -9,17 +9,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #2563eb;
+      /* Light Mode - AI-Native Palette */
+      --primary: #2563EB;
       --primary-hover: #1d4ed8;
-      --bg-body: #f8fafc;
-      --bg-card: #ffffff;
-      --text-main: #1e293b;
-      --text-sub: #64748b;
-      --border: #e2e8f0;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --secondary: #3B82F6;
+      --accent: #F97316;
+      --bg-body: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --text-main: #1E293B;
+      --text-sub: #64748B;
+      --border: #E2E8F0;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
       --radius: 6px;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] {
+      /* Dark Mode - AI-Native Palette */
+      --primary: #3B82F6;
+      --primary-hover: #60A5FA;
+      --secondary: #60A5FA;
+      --accent: #FB923C;
+      --bg-body: #0F172A;
+      --bg-card: #1E293B;
+      --text-main: #F1F5F9;
+      --text-sub: #94A3B8;
+      --border: #334155;
+      --success: #34D399;
+      --warning: #FBBF24;
+      --danger: #F87171;
+
+      /* Shadows for dark mode */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    html {
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     * {
@@ -34,6 +67,7 @@
       background: var(--bg-body);
       color: var(--text-main);
       font-size: 13px;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     /* --- TABS --- */
@@ -44,7 +78,7 @@
       position: sticky;
       top: 0;
       z-index: 10;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      box-shadow: var(--shadow-sm);
     }
 
     .tab-btn {
@@ -99,7 +133,7 @@
       border-radius: var(--radius);
       padding: 12px;
       margin-bottom: 10px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      box-shadow: var(--shadow-sm);
     }
 
     .group-title {
@@ -142,21 +176,33 @@
     /* --- BUTTONS --- */
     .btn-main {
       width: 100%;
-      padding: 8px;
+      padding: 10px 16px;
       border: none;
       border-radius: var(--radius);
       font-weight: 600;
       cursor: pointer;
       color: white;
-      background: var(--primary);
-      transition: background-color 0.2s, box-shadow 0.2s;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
       margin-top: 4px;
       user-select: none;
+
+      /* Center text */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-align: center;
     }
 
     .btn-main:hover {
-      background: var(--primary-hover);
-      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+      background: linear-gradient(135deg, var(--primary-hover), var(--primary));
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .btn-main:active {
+      transform: translateY(0);
     }
 
     .btn-main:focus-visible {
@@ -417,6 +463,7 @@
       line-height: 1.5;
     }
 
+
     .step {
       margin-bottom: 6px;
       padding-left: 20px;
@@ -437,10 +484,42 @@
       background: #f8fafc;
       padding: 10px;
       border-radius: 6px;
-      line-height: 1.4;
-      border: 1px dashed #cbd5e1;
+      margin-top: 10px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* --- THEME TOGGLE --- */
+    .theme-toggle {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      z-index: 20;
+    }
+
+    .theme-toggle:hover {
+      background: var(--bg-body);
+      box-shadow: var(--shadow-sm);
+      transform: scale(1.05);
+    }
+
+    .theme-toggle svg {
+      width: 18px;
+      height: 18px;
+      color: var(--text-main);
     }
   </style>
+
 
   <script src="papaparse.min.js"></script>
   <script src="config.js"></script>
@@ -457,6 +536,20 @@
 </head>
 
 <body>
+  <!-- Theme Toggle Button -->
+  <button id="themeToggle" class="theme-toggle" title="Toggle theme">
+    <svg id="iconSun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+      stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+    </svg>
+    <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+      stroke="currentColor" style="display:none">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+    </svg>
+  </button>
+
   <div id="toast-container"></div>
 
   <div class="tabs">
@@ -809,6 +902,44 @@
       </div>
     </div>
   </div>
+
+  <script>
+    // Theme Toggle Logic
+    (function () {
+      const themeToggle = document.getElementById('themeToggle');
+      const iconSun = document.getElementById('iconSun');
+      const iconMoon = document.getElementById('iconMoon');
+
+      if (!themeToggle || !iconSun || !iconMoon) return;
+
+      // Auto-detect system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const savedTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+
+      // Apply saved theme
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateIcons(savedTheme);
+
+      // Toggle handler
+      themeToggle.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        updateIcons(next);
+      });
+
+      function updateIcons(theme) {
+        if (theme === 'dark') {
+          iconSun.style.display = 'none';
+          iconMoon.style.display = 'block';
+        } else {
+          iconSun.style.display = 'block';
+          iconMoon.style.display = 'none';
+        }
+      }
+    })();
+  </script>
 </body>
 
 </html>
