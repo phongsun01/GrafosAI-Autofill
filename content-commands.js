@@ -220,12 +220,16 @@ window.ContentCommands = {
             console.log(`[AutoFillPro] Extracted '${varName}' = '${redactedValue}'`);
 
             // Store in background
+            console.log(`[DEBUG] Sending SET_VARIABLE: key="${varName}", value="${value.substring(0, 50)}..."`);
             await new Promise((resolve) => {
                 chrome.runtime.sendMessage({
                     action: 'SET_VARIABLE',
                     key: varName,
                     value: value  // Store actual value, not redacted
-                }, resolve);
+                }, (response) => {
+                    console.log(`[DEBUG] SET_VARIABLE response:`, response);
+                    resolve(response);
+                });
             });
 
             return true;
