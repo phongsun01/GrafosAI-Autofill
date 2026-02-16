@@ -65,7 +65,7 @@ async function actualSaveAndBroadcast(immediate) {
     // [FIX] Always broadcast UI updates first (before dirty check)
     const { variables, ...stateWithoutVars } = bgState;
     chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
-    
+
     // [OPTIMIZATION] Only save if state has actually changed
     if (!isDirty && !immediate) {
         Logger.info('[Storage] Skipping save - no changes detected');
@@ -417,12 +417,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     _timestamp: Date.now()
                 };
 
+                console.log(`[DEBUG] SET_VARIABLE: key="${request.key}", value="${value}", stored as:`, bgState.variables[request.key]);
+
                 await storageLocal.set({ variables: bgState.variables });
                 sendResponse({ success: true });
                 return true;
             }
 
             if (request.action === "GET_VARIABLES") {
+                console.log(`[DEBUG] GET_VARIABLES: returning`, bgState.variables || {});
                 sendResponse({ vars: bgState.variables || {} });
                 return;
             }
