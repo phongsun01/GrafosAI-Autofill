@@ -44,6 +44,26 @@ const _indexToColumnLetter = (index) => {
     return result;
 };
 
+// [NEW] Standardized Error Handling
+export class ExtensionError extends Error {
+    constructor(message, code, recoverable = true) {
+        super(message);
+        this.name = "ExtensionError";
+        this.code = code;
+        this.recoverable = recoverable;
+    }
+}
+
+export const handleError = (error, context) => {
+    console.error(`[${context}]`, error);
+
+    if (error instanceof ExtensionError && error.recoverable) {
+        return { shouldRetry: true, message: error.message };
+    }
+
+    return { shouldRetry: false, message: error.message || "Unknown error" };
+};
+
 export const Utils = {
     // [FIX 2] Detailed Timeout Log
     sendMessageWithRetry: async (tabId, message, maxRetries = RETRY_CONFIG.MAX_RETRIES) => {

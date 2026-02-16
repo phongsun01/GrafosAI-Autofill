@@ -43,7 +43,9 @@ async function saveAndBroadcast(immediate = false) {
     }
 
     if (!immediate) {
-        saveTimeout = setTimeout(() => actualSaveAndBroadcast(), 200);
+        // [CONFIG] Use batchItemDelay from config with a minimum floor
+        const delay = 200;
+        saveTimeout = setTimeout(() => actualSaveAndBroadcast(), delay);
     } else {
         await actualSaveAndBroadcast();
     }
@@ -99,7 +101,9 @@ async function ensureContentScript(tabId) {
                     target: { tabId: tabId },
                     files: ['security-utils.js', 'content-utils.js', 'content-commands.js', 'picker.js', 'content.js']
                 });
-                await new Promise(r => setTimeout(r, 200)); // Wait for initialization
+                // [CONFIG] Use scriptInjectionWait
+                const waitTime = (typeof window !== 'undefined' && window.APP_CONFIG?.performance?.scriptInjectionWait) || 200;
+                await new Promise(r => setTimeout(r, waitTime));
                 injectedTabs.add(tabId);
                 return true;
             } catch (injectErr) {
@@ -151,6 +155,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 
             bgState.logs = "✅ Đã tải xong. Đang tiếp tục...";
             saveAndBroadcast();
+            // [CONFIG] Use navigationWait or similar
             setTimeout(() => runNextItem(), 1500);
         }
     }
@@ -258,6 +263,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     // THÊM: Timeout safety net
                     if (bgState.navigationTimeoutId) clearTimeout(bgState.navigationTimeoutId);
 
+                    // [CONFIG] Use navigationWait or similar (default 30s)
+                    const navigationTimeout = (typeof window !== 'undefined' && window.APP_CONFIG?.performance?.navigationWait) || 30000;
+
                     bgState.navigationTimeoutId = setTimeout(() => {
                         if (bgState.expectingNavigation) {
                             bgState.expectingNavigation = false;
@@ -265,7 +273,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             bgState.logs = "❌ Navigation timeout. Vui lòng kiểm tra lại.";
                             saveAndBroadcast();
                         }
-                    }, 30000); // 30 seconds timeout
+                    }, navigationTimeout);
 
                     await saveAndBroadcast();
 
@@ -315,6 +323,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     } else {
                         bgState.logs = `✅ Xong [${info}]. Chờ 1s...`;
                         await saveAndBroadcast();
+                        // [CONFIG] Use batchItemDelay
                         const delay = (typeof window !== 'undefined' && window.APP_CONFIG?.performance?.batchItemDelay) || 1000;
                         setTimeout(() => { if (bgState.status === "RUNNING") runNextItem(); }, delay);
                     }

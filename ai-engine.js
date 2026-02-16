@@ -98,29 +98,33 @@ window.AIEngine = {
                     'X-Goog-Api-Key': apiKey
                 }
             });
+
             if (!response.ok) {
-                // If ListModels fails, fall back to a safe default
                 console.warn("[AI] ListModels failed, using default.");
                 return "gemini-1.5-flash";
             }
 
             const data = await response.json();
-            if (!data.models) return "gemini-1.5-flash"; // No models returned?
+            if (!data.models) return "gemini-1.5-flash";
 
-            // Filter for models that support generateContent
             const candidates = data.models.filter(m =>
                 m.supportedGenerationMethods &&
                 m.supportedGenerationMethods.includes("generateContent")
             );
 
-            // Sort logic: Prefer flash > pro > 1.5 > 1.0
+            // [OPTIMIZATION] Use Map for O(1) lookup instead of nested loops
+            const modelMap = new Map(candidates.map(m => [
+                m.name.split('/').pop(), // Extract short name (e.g., gemini-1.5-flash)
+                m.name
+            ]));
+
             const preferredOrder = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro", "gemini-1.0-pro"];
 
             for (const pref of preferredOrder) {
-                const found = candidates.find(m => m.name.endsWith(pref));
-                if (found) {
-                    console.log(`[AI] Selected best model: ${found.name}`);
-                    return found.name.replace("models/", ""); // API expects just name usually, or models/name
+                if (modelMap.has(pref)) {
+                    const fullName = modelMap.get(pref);
+                    console.log(`[AI] Selected best model: ${fullName}`);
+                    return fullName.replace("models/", "");
                 }
             }
 
@@ -130,7 +134,7 @@ window.AIEngine = {
                 return candidates[0].name.replace("models/", "");
             }
 
-            return "gemini-1.5-flash"; // Absolute fallback
+            return "gemini-1.5-flash";
 
         } catch (e) {
             console.error("[AI] Discovery error:", e);
@@ -145,57 +149,84 @@ window.AIEngine = {
      * @param {string} apiKey - Gemini API Key
      * @returns {Promise<Array>} Generated XPaths
      */
-    async generateXPath(html, prompt, apiKey) {
-        if (!apiKey) throw new Error("API Key is required");
+    async generateXPath(html, prompt, apiKey, retries = 3) {
+        // [VALIDATION] Input checks
+        if (!apiKey || typeof apiKey !== 'string') throw new Error("API Key must be a non-empty string");
+        if (!html || typeof html !== 'string') throw new Error("HTML must be a non-empty string");
+
+        // [OPTIMIZATION] Limit HTML size to prevent payload issues (100KB limit)
+        const MAX_HTML_SIZE = 100000;
+        let safeHtml = html;
+        if (safeHtml.length > MAX_HTML_SIZE) {
+            console.warn(`[AI] HTML too large (${safeHtml.length} chars), truncating to ${MAX_HTML_SIZE}...`);
+            safeHtml = safeHtml.substring(0, MAX_HTML_SIZE) + "...[truncated]";
+        }
 
         const safeKey = apiKey.trim();
-
-        // 1. Discover valid model
         let modelName = await this.discoverBestModel(safeKey);
+
         // Ensure prefix consistency
         if (!modelName.startsWith("models/") && !modelName.startsWith("tunedModels/")) {
-            // actually the API endpoint format is models/{model}:generateContent
-            // so if discovery returns 'models/gemini-pro', we extract 'gemini-pro'
             modelName = modelName.replace("models/", "");
         }
 
         console.log(`[AI] Using Model: ${modelName}`);
 
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-        const fullPrompt = `${prompt}\n\nTarget Form HTML:\n${html}\n\nReturn JSON format: [{"label": "...", "xpath": "..."}]`;
+        const fullPrompt = `${prompt}\n\nTarget Form HTML:\n${safeHtml}\n\nReturn JSON format: [{"label": "...", "xpath": "..."}]`;
 
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Goog-Api-Key': safeKey
-                },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: fullPrompt }] }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        temperature: 0.2
+        // [RELIABILITY] Retry wrapper
+        for (let attempt = 0; attempt < retries; attempt++) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Goog-Api-Key': safeKey
+                    },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: fullPrompt }] }],
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            temperature: 0.2
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+
+                    // Handle Rate Limiting (429)
+                    if (response.status === 429) {
+                        if (attempt < retries - 1) {
+                            const backoff = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+                            console.warn(`[AI] Rate limited. Retrying in ${backoff}ms...`);
+                            await new Promise(r => setTimeout(r, backoff));
+                            continue;
+                        }
                     }
-                })
-            });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                const msg = errorData.error?.message || "Unknown API Error";
-                throw new Error(`${modelName} failed: ${msg}`);
+                    const msg = errorData.error?.message || "Unknown API Error";
+                    throw new Error(`${modelName} failed: ${msg}`);
+                }
+
+                const data = await response.json();
+                if (!data.candidates || !data.candidates[0].content) {
+                    throw new Error("Invalid API response format");
+                }
+                const text = data.candidates[0].content.parts[0].text;
+                return JSON.parse(text);
+
+            } catch (error) {
+                // Retry on network errors
+                if (attempt < retries - 1 && (error.message.includes('fetch') || error.message.includes('network'))) {
+                    console.warn(`[AI] Network error (Attempt ${attempt + 1}/${retries}). Retrying...`);
+                    await new Promise(r => setTimeout(r, 1000));
+                    continue;
+                }
+                console.error(`[AI] Error with ${modelName}:`, error);
+                throw error;
             }
-
-            const data = await response.json();
-            if (!data.candidates || !data.candidates[0].content) {
-                throw new Error("Invalid API response format");
-            }
-            const text = data.candidates[0].content.parts[0].text;
-            return JSON.parse(text);
-
-        } catch (error) {
-            console.error(`[AI] Error with ${modelName}:`, error);
-            throw error;
         }
     }
 };
