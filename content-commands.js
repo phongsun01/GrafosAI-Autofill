@@ -564,30 +564,30 @@ window.ContentCommands = {
                             break;
                         case 'fill':
                         default:
-                            // Fill command
+                            const xpathList = parsed.params.xpath.split('|');
                             let filled = false;
-                            const selectors = [parsed.params.xpath, `input[name="${parsed.params.xpath}"]`, `#${parsed.params.xpath}`];
-                            for (let selector of selectors) {
-                                if (filled) break;
-                                const elements = await U.findElements(selector);
-                                for (let el of elements) {
-                                    if (AFP.stopRequested) return;
-                                    U.highlightElement(el);
 
-                                    // [FIX] Substitute variables in value before filling
-                                    let valueToFill = parsed.params.value !== undefined ? parsed.params.value : cellValue;
-                                    if (valueToFill && valueToFill.includes('${')) {
-                                        try {
-                                            const response = await new Promise(resolve => chrome.runtime.sendMessage({ action: "GET_VARIABLES" }, resolve));
-                                            const vars = response?.vars || {};
-                                            valueToFill = this.substituteVariables(valueToFill, vars);
-                                            console.log(`[Variables] Substituted value: "${valueToFill}"`);
-                                        } catch (e) {
-                                            console.warn("[Variables] Substitution failed:", e);
-                                        }
-                                    }
+                            // [FIX] Substitute variables in value before filling
+                            let valueToFill = parsed.params.value !== undefined ? parsed.params.value : cellValue;
+                            if (valueToFill && valueToFill.includes('${')) {
+                                try {
+                                    const response = await new Promise(resolve => chrome.runtime.sendMessage({ action: "GET_VARIABLES" }, resolve));
+                                    const vars = response?.vars || {};
+                                    valueToFill = this.substituteVariables(valueToFill, vars);
+                                    console.log(`[Variables] Substituted value: "${valueToFill}"`);
+                                } catch (e) {
+                                    console.warn("[Variables] Substitution failed:", e);
+                                }
+                            }
 
-                                    const result = await U.fillElement(el, valueToFill);
+                            for (let xp of xpathList) {
+                                const cleanXpath = xp.trim();
+                                if (!cleanXpath) continue;
+                                const element = await U.waitForElement(cleanXpath, 2000);
+                                if (element) {
+                                    try { element.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { }
+
+                                    const result = await U.fillField(element, valueToFill);
 
                                     if (result) {
                                         await new Promise(r => setTimeout(r, 1000));
