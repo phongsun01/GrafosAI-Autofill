@@ -1,6 +1,4 @@
 // MODULE: Utils (V2.9 - Enhanced Logging)
-import { ERRORS, TIMEOUTS, RETRY_CONFIG } from './constants.js';
-
 window.storageLocal = {
     get: (keys) => new Promise((resolve, reject) => {
         chrome.storage.local.get(keys, (result) => {
