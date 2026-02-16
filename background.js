@@ -35,29 +35,37 @@ function formatDuration(ms) {
     } catch (e) { }
 })();
 
-// Save & Broadcast
+// --- STATE MANAGEMENT & PERSISTENCE ---
 let saveTimeout = null;
+let isDirty = false; // [OPTIMIZATION] Track if state has changed
+
 async function saveAndBroadcast(immediate = false) {
     if (!immediate && saveTimeout) {
         clearTimeout(saveTimeout);
     }
 
     if (!immediate) {
-        // [CONFIG] Use batchItemDelay from config with a minimum floor
-        const delay = 200;
-        saveTimeout = setTimeout(() => actualSaveAndBroadcast(), delay);
+        // [OPTIMIZATION] Increased debounce from 200ms to 500ms to reduce I/O
+        saveTimeout = setTimeout(() => actualSaveAndBroadcast(false), 500);
     } else {
-        await actualSaveAndBroadcast();
+        await actualSaveAndBroadcast(true);
     }
 }
 
-async function actualSaveAndBroadcast() {
+async function actualSaveAndBroadcast(immediate) {
+    // [OPTIMIZATION] Only save if state has actually changed
+    if (!isDirty && !immediate) {
+        console.log('[Storage] Skipping save - no changes detected');
+        return;
+    }
+
     if (!await Utils.checkStorageQuota()) {
         chrome.runtime.sendMessage({ action: "quota_low_warning" }).catch(() => { });
         const { variables, ...stateWithoutVars } = bgState;
         chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
         return;
     }
+
     try {
         const { variables, ...stateWithoutVars } = bgState;
         await Promise.all([
@@ -65,9 +73,18 @@ async function actualSaveAndBroadcast() {
             storageLocal.set({ variables: variables })
         ]);
 
+        isDirty = false; // Reset dirty flag after successful save
+
         // Only broadcast UI state (exclude heavy variables)
         chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
-    } catch (e) { console.error("Save State Error:", e); }
+    } catch (e) {
+        console.error("Save State Error:", e);
+    }
+}
+
+// [OPTIMIZATION] Helper to mark state as dirty
+function markDirty() {
+    isDirty = true;
 }
 
 function getCurrentRowInfo() {
@@ -128,6 +145,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     if (bgState.targetTabId === tabId && bgState.status === "RUNNING") {
         bgState.status = "PAUSED";
         bgState.logs = "⚠️ Tab đã đóng. Mở lại và bấm Tiếp tục.";
+        markDirty();
         saveAndBroadcast();
     }
 });
@@ -143,6 +161,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
             } else {
                 bgState.status = "PAUSED";
                 bgState.logs = "⚠️ Tab đang reload. Chờ tải xong hãy bấm Tiếp tục.";
+                markDirty();
                 saveAndBroadcast();
             }
         }
@@ -234,6 +253,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === "PAUSE_BATCH") {
                 bgState.status = "PAUSED"; bgState.pausedBySheet = false;
                 bgState.logs = "⏸️ Đã bấm Tạm dừng.";
+                markDirty();
                 await saveAndBroadcast();
                 sendResponse({ success: true });
                 return;
@@ -246,6 +266,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         if (!tab) throw new Error();
                         await ensureContentScript(bgState.targetTabId);
                         bgState.status = "RUNNING"; bgState.logs = "▶️ Đang tiếp tục...";
+                        markDirty();
                         // If we were paused during nav, reset flag just in case
                         bgState.expectingNavigation = false;
                         await saveAndBroadcast();

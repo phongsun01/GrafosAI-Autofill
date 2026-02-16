@@ -44,25 +44,109 @@ const _indexToColumnLetter = (index) => {
     return result;
 };
 
-// [NEW] Standardized Error Handling
+// --- ERROR HANDLING ---
+/**
+ * Standard Error Codes for consistent error handling
+ */
+const ERROR_CODES = {
+    // XPath Errors (1xxx)
+    ERR_XPATH_INVALID: 1001,
+    ERR_XPATH_NOT_FOUND: 1002,
+    ERR_XPATH_DANGEROUS: 1003,
+
+    // Network Errors (2xxx)
+    ERR_NETWORK_TIMEOUT: 2001,
+    ERR_NETWORK_FAILED: 2002,
+    ERR_API_RATE_LIMIT: 2003,
+
+    // Storage Errors (3xxx)
+    ERR_STORAGE_QUOTA: 3001,
+    ERR_STORAGE_FAILED: 3002,
+
+    // Content Script Errors (4xxx)
+    ERR_SCRIPT_INJECTION: 4001,
+    ERR_TAB_NOT_FOUND: 4002,
+    ERR_TAB_DISCONNECTED: 4003,
+
+    // AI Errors (5xxx)
+    ERR_AI_HTML_TOO_LARGE: 5001,
+    ERR_AI_INVALID_RESPONSE: 5002,
+    ERR_AI_MODEL_NOT_FOUND: 5003,
+
+    // General Errors (9xxx)
+    ERR_UNKNOWN: 9999
+};
+
+/**
+ * Custom Extension Error with error code
+ */
 export class ExtensionError extends Error {
-    constructor(message, code, recoverable = true) {
+    constructor(message, code = ERROR_CODES.ERR_UNKNOWN, context = {}) {
         super(message);
-        this.name = "ExtensionError";
+        this.name = 'ExtensionError';
         this.code = code;
-        this.recoverable = recoverable;
+        this.context = context;
+        this.timestamp = Date.now();
     }
 }
 
-export const handleError = (error, context) => {
-    console.error(`[${context}]`, error);
+/**
+ * Centralized error logger with error codes
+ * @param {Error} error - Error object
+ * @param {string} context - Context where error occurred
+ * @param {number} code - Error code from ERROR_CODES
+ */
+function logError(error, context = 'Unknown', code = ERROR_CODES.ERR_UNKNOWN) {
+    const errorLog = {
+        code,
+        message: error.message || String(error),
+        context,
+        timestamp: new Date().toISOString(),
+        stack: error.stack
+    };
 
-    if (error instanceof ExtensionError && error.recoverable) {
-        return { shouldRetry: true, message: error.message };
+    console.error(`[Error ${code}] ${context}:`, errorLog);
+
+    // Could integrate with error tracking service here (e.g., Sentry)
+    // Sentry.captureException(error, { extra: errorLog });
+
+    return errorLog;
+}
+
+/**
+ * Enhanced error handler with recovery logic based on error codes
+ */
+export function handleError(error, context = 'Unknown') {
+    let code = ERROR_CODES.ERR_UNKNOWN;
+
+    // Determine error code from error type/message
+    if (error instanceof ExtensionError) {
+        code = error.code;
+    } else if (error.message?.includes('XPath')) {
+        code = ERROR_CODES.ERR_XPATH_INVALID;
+    } else if (error.message?.includes('timeout')) {
+        code = ERROR_CODES.ERR_NETWORK_TIMEOUT;
+    } else if (error.message?.includes('quota')) {
+        code = ERROR_CODES.ERR_STORAGE_QUOTA;
+    } else if (error.message?.includes('Tab')) {
+        code = ERROR_CODES.ERR_TAB_NOT_FOUND;
     }
 
-    return { shouldRetry: false, message: error.message || "Unknown error" };
-};
+    const errorLog = logError(error, context, code);
+
+    // Recovery logic based on error code
+    const recoveryActions = {
+        [ERROR_CODES.ERR_NETWORK_TIMEOUT]: 'Retry with exponential backoff',
+        [ERROR_CODES.ERR_STORAGE_QUOTA]: 'Clear old variables and retry',
+        [ERROR_CODES.ERR_TAB_NOT_FOUND]: 'Pause automation and notify user',
+        [ERROR_CODES.ERR_XPATH_INVALID]: 'Skip item and continue',
+    };
+
+    const recovery = recoveryActions[code] || 'Log and continue';
+    console.log(`[Recovery] ${recovery}`);
+
+    return { error: errorLog, recovery };
+}
 
 export const Utils = {
     // [FIX 2] Detailed Timeout Log
