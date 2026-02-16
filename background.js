@@ -47,7 +47,7 @@ const Utils = {
             return true; // Assume OK if check fails
         }
     },
-    
+
     async sendMessageWithRetry(tabId, message, maxRetries = 3) {
         for (let i = 0; i < maxRetries; i++) {
             try {
@@ -182,7 +182,7 @@ async function ensureContentScript(tabId) {
                     files: ['security-utils.js', 'content-utils.js', 'content-commands.js', 'picker.js', 'content.js']
                 });
                 // [CONFIG] Use scriptInjectionWait
-                const waitTime = (typeof window !== 'undefined' && window.APP_CONFIG?.performance?.scriptInjectionWait) || 200;
+                const waitTime = self.APP_CONFIG?.performance?.scriptInjectionWait || 200;
                 await new Promise(r => setTimeout(r, waitTime));
                 injectedTabs.add(tabId);
                 return true;
@@ -262,7 +262,7 @@ chrome.runtime.onInstalled.addListener(() => {
 // [NEW] TTL-based Variable Cleanup (Prevent Memory Leak)
 setInterval(() => {
     const now = Date.now();
-    const maxVarLength = window.APP_CONFIG?.performance?.variables?.maxVarLength || 1000;
+    const maxVarLength = self.APP_CONFIG?.performance?.variables?.maxVarLength || 1000;
     let cleaned = 0;
 
     for (const [key, val] of Object.entries(bgState.variables || {})) {
@@ -381,7 +381,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     if (bgState.navigationTimeoutId) clearTimeout(bgState.navigationTimeoutId);
 
                     // [CONFIG] Use navigationWait or similar (default 30s)
-                    const navigationTimeout = (typeof window !== 'undefined' && window.APP_CONFIG?.performance?.navigationWait) || 30000;
+                    const navigationTimeout = self.APP_CONFIG?.performance?.navigationWait || 30000;
 
                     bgState.navigationTimeoutId = setTimeout(() => {
                         if (bgState.expectingNavigation) {
@@ -442,7 +442,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         bgState.logs = `✅ Xong [${info}]. Chờ 1s...`;
                         await saveAndBroadcast();
                         // [CONFIG] Use batchItemDelay
-                        const delay = (typeof window !== 'undefined' && window.APP_CONFIG?.performance?.batchItemDelay) || 1000;
+                        const delay = self.APP_CONFIG?.performance?.batchItemDelay || 1000;
                         setTimeout(() => { if (bgState.status === "RUNNING") runNextItem(); }, delay);
                     }
                 }
@@ -455,8 +455,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === "SET_VARIABLE") {
                 if (!bgState.variables) bgState.variables = {};
 
-                // [FIX] Enforce maxVarLength in real-time
-                const maxLen = window.APP_CONFIG?.performance?.variables?.maxVarLength || 1000;
+                // [FIX] Enforce maxVarLength in real-time (use self instead of window in service worker)
+                const maxLen = self.APP_CONFIG?.performance?.variables?.maxVarLength || 1000;
                 let value = request.value;
                 if (typeof value === 'string' && value.length > maxLen) {
                     value = value.substring(0, maxLen);

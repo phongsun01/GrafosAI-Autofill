@@ -26,7 +26,7 @@
     }
   ],
   "name": "GrafosAI-Autofill (Background Runner)",
-  "version": "2.9.5",
+  "version": "2.9.6",
   "description": "Enterprise-grade form automation with security hardening - Google Sheets integration, macros, and XPath picker",
   "permissions": [
     "activeTab",
