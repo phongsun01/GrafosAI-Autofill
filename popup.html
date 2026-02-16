@@ -371,10 +371,11 @@
 
     .btn-add {
       background: var(--success);
+      /* Override specifically for add button to match standard if needed, or remove to use btn-std */
       width: 36px;
-      height: 34px;
+      height: 36px;
       font-size: 18px;
-      margin-bottom: 8px;
+      margin-bottom: 0;
     }
 
     /* --- LIST ITEMS --- */
@@ -383,7 +384,9 @@
       align-items: center;
       justify-content: space-between;
       padding: 8px;
-      background: #fff;
+      padding: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       border: 1px solid var(--border);
       margin-bottom: 4px;
       border-radius: var(--radius);
@@ -391,7 +394,8 @@
 
     .list-item.selected {
       border-left: 3px solid var(--primary);
-      background: #eff6ff;
+      background: var(--bg-body);
+      /* Slightly different than card */
     }
 
     .item-actions {
@@ -806,7 +810,7 @@
         </select>
       </div>
 
-      <button id="btnAiScan" class="btn-primary full-width">🔍 Scan Form & Generate XPaths</button>
+      <button id="btnAiScan" class="btn-std full-width" style="width:100%">🔍 Scan Form & Generate XPaths</button>
 
       <div id="aiResults" style="display:none; margin-top:10px; border-top: 1px solid #eee; padding-top: 10px;">
         <label>Generated XPaths:</label>
@@ -887,7 +891,7 @@
       <button id="subTabXPath" class="btn-std"
         style="flex:1; font-size:11px; padding:6px; background:var(--text-sub);">XPath</button>
       <button id="subTabVars" class="btn-std"
-        style="flex:1; font-size:11px; padding:6px; background:var(--text-sub);">Biến</button>
+        style="flex:1; font-size:11px; padding:6px; background:var(--text-sub);">Variables</button>
       <button id="subTabMacros" class="btn-std"
         style="flex:1; font-size:11px; padding:6px; background:var(--text-sub);">Macro</button>
       <button id="subTabBackup" class="btn-std"
