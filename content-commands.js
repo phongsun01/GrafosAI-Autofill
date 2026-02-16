@@ -131,7 +131,12 @@ window.ContentCommands = {
 
         let substituted = cmd.replace(varPattern, (match, key) => {
             if (vars.hasOwnProperty(key)) {
-                const value = String(vars[key]);
+                // [FIX] Handle both old format (direct value) and new format ({value, _timestamp})
+                const varData = vars[key];
+                const rawValue = (typeof varData === 'object' && varData.value !== undefined) 
+                    ? varData.value 
+                    : varData;
+                const value = String(rawValue);
                 // Prevent nested expansion attacks
                 if (value.includes('${')) {
                     console.warn(`[Security] Nested variable detected in ${key}, stripping`);
