@@ -29,22 +29,42 @@ function formatDuration(ms) {
 // Load State
 (async () => {
     try {
-        const result = await storageLocal.get(['bgState']);
+        const result = await storageLocal.get(['bgState', 'variables']); // Load both
         if (result.bgState) bgState = result.bgState;
+        if (result.variables) bgState.variables = result.variables;
     } catch (e) { }
 })();
 
 // Save & Broadcast
-async function saveAndBroadcast() {
+let saveTimeout = null;
+async function saveAndBroadcast(immediate = false) {
+    if (!immediate && saveTimeout) {
+        clearTimeout(saveTimeout);
+    }
+
+    if (!immediate) {
+        saveTimeout = setTimeout(() => actualSaveAndBroadcast(), 200);
+    } else {
+        await actualSaveAndBroadcast();
+    }
+}
+
+async function actualSaveAndBroadcast() {
     if (!await Utils.checkStorageQuota()) {
         chrome.runtime.sendMessage({ action: "quota_low_warning" }).catch(() => { });
-        chrome.runtime.sendMessage({ action: "UI_UPDATE", data: bgState }).catch(() => { });
+        const { variables, ...stateWithoutVars } = bgState;
+        chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
         return;
     }
     try {
-        await storageLocal.set({ bgState: bgState });
-        // Only broadcast after successful save
-        chrome.runtime.sendMessage({ action: "UI_UPDATE", data: bgState }).catch(() => { });
+        const { variables, ...stateWithoutVars } = bgState;
+        await Promise.all([
+            storageLocal.set({ bgState: stateWithoutVars }),
+            storageLocal.set({ variables: variables })
+        ]);
+
+        // Only broadcast UI state (exclude heavy variables)
+        chrome.runtime.sendMessage({ action: "UI_UPDATE", data: stateWithoutVars }).catch(() => { });
     } catch (e) { console.error("Save State Error:", e); }
 }
 
@@ -60,12 +80,11 @@ const injectedTabs = new Set();
 const injectionPromises = new Map(); // Track ongoing injections to prevent race conditions
 
 async function ensureContentScript(tabId) {
-    if (injectedTabs.has(tabId)) return true;
-
-    // Check if injection is already in progress
+    // Check if injection is already in progress FIRST
     if (injectionPromises.has(tabId)) {
         return await injectionPromises.get(tabId);
     }
+    if (injectedTabs.has(tabId)) return true;
 
     const injectionPromise = (async () => {
         try {
@@ -126,6 +145,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
         if (bgState.targetTabId === tabId && bgState.status === "RUNNING" && bgState.expectingNavigation) {
             console.log("[Background] Auto-resume after navigation");
             bgState.expectingNavigation = false;
+
+            // Clear timeout safety net
+            if (bgState.navigationTimeoutId) clearTimeout(bgState.navigationTimeoutId);
+
             bgState.logs = "✅ Đã tải xong. Đang tiếp tục...";
             saveAndBroadcast();
             setTimeout(() => runNextItem(), 1500);
@@ -211,6 +234,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         await chrome.tabs.sendMessage(bgState.targetTabId, { action: "stop_automation" });
                     } catch (e) { }
                 }
+
+                // Auto-cleanup old variables
+                const varKeys = Object.keys(bgState.variables || {});
+                if (varKeys.length > 100) {
+                    bgState.variables = {};
+                }
+
                 bgState = { ...defaultState, logs: "🛑 Đã DỪNG." };
                 await saveAndBroadcast();
                 sendResponse({ success: true });
@@ -224,12 +254,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     // Mark current item as done because the script will die
                     bgState.currentIndex++;
                     bgState.logs = `🔄 Đang chuyển hướng...`;
+
+                    // THÊM: Timeout safety net
+                    if (bgState.navigationTimeoutId) clearTimeout(bgState.navigationTimeoutId);
+
+                    bgState.navigationTimeoutId = setTimeout(() => {
+                        if (bgState.expectingNavigation) {
+                            bgState.expectingNavigation = false;
+                            bgState.status = "PAUSED";
+                            bgState.logs = "❌ Navigation timeout. Vui lòng kiểm tra lại.";
+                            saveAndBroadcast();
+                        }
+                    }, 30000); // 30 seconds timeout
+
                     await saveAndBroadcast();
 
                     // Check if all done
                     if (bgState.currentIndex >= bgState.total) {
                         bgState.status = "IDLE";
                         bgState.expectingNavigation = false;
+                        if (bgState.navigationTimeoutId) clearTimeout(bgState.navigationTimeoutId);
+
                         const start = bgState.startTime || Date.now();
                         const duration = Math.max(0, Date.now() - start);
                         bgState.logs = `🎉 Xong ${bgState.total} dòng (${formatDuration(duration)})`;

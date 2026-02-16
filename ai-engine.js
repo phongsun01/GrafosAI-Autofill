@@ -91,7 +91,13 @@ window.AIEngine = {
     async discoverBestModel(apiKey) {
         console.log("[AI] Discovering available models...");
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey
+                }
+            });
             if (!response.ok) {
                 // If ListModels fails, fall back to a safe default
                 console.warn("[AI] ListModels failed, using default.");
@@ -159,9 +165,12 @@ window.AIEngine = {
         const fullPrompt = `${prompt}\n\nTarget Form HTML:\n${html}\n\nReturn JSON format: [{"label": "...", "xpath": "..."}]`;
 
         try {
-            const response = await fetch(`${API_URL}?key=${safeKey}`, {
+            const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': safeKey
+                },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: fullPrompt }] }],
                     generationConfig: {
