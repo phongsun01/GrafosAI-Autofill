@@ -71,6 +71,7 @@ Edge cho phép đăng ký miễn phí và import trực tiếp từ Chrome Store
 *   **Truy cập**: [Partner Center (Microsoft)](https://partner.microsoft.com/en-us/dashboard/microsoftedge/overview).
 *   Đăng nhập bằng tài khoản Microsoft (Outlook/Hotmail).
 *   Đăng ký tài khoản Developer (Individual). **Miễn phí**.
+https://partner.microsoft.com/en-us/dashboard/account/exp/enrollnow/msedgeaddons
 
 ### Bước 2: Tạo Extension Mới
 1.  Nhấn **Create new extension**.
