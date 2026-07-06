@@ -1,9 +1,15 @@
 # Project Status
 
-**Current Version:** 3.0.9 (Stable)
-**Last Updated:** 2026-02-16
+**Current Version:** 3.1.0 (Stable)
+**Last Updated:** 2026-07-06
 
 ## Recent Releases
+### 🚀 v3.1.0 (Stable Release)
+- **Security Hardening**: Removed passive `<all_urls>` content script injection and `web_accessible_resources` for zero-trust exposure. Content scripts are now injected dynamically on-demand.
+- **Data Encryption**: Implemented local credential encryption using Web Crypto API (`AES-GCM` with `PBKDF2` key derivation from extension ID) for Gemini API keys stored at rest.
+- **Repository Cleanup**: Added MIT license and cleaned up legacy backup files.
+- **Automated Testing**: Created browser-based test runner with unit tests for data manager and AI engine.
+
 ### 🚀 v3.0.9 (Stable Release)
 - **UI Redesign**: Complete overhaul with AI-Native aesthetics.
 - **Dark Mode**: Full support with system detection and manual toggle.
@@ -16,7 +22,7 @@
 - ✅ **v2.9.3-v2.9.6**: Variable system fully functional (extract + fill)
 - ✅ **v2.9.6**: Background service worker `window.APP_CONFIG` → `self.APP_CONFIG`
 
-### Variable System Status
+## Variable System Status
 **Status:** ✅ **WORKING**
 
 Extract and fill variables now work correctly:
@@ -30,6 +36,8 @@ Column B: fill(//*[@id="target"], ${myVar})
 ### ✅ Completed Features
 | Feature | Status | Version |
 |---------|--------|---------|
+| **Local Data Encryption** | ✅ Done | v3.1.0 |
+| **Security Hardening (On-Demand Injection)** | ✅ Done | v3.1.0 |
 | **UI Redesign (Dark Mode)** | ✅ Done | v3.0.9 |
 | Conditional Logic (if/else) | ✅ Done | v1.9 |
 | Data Extraction (`extract`) | ✅ Done | v1.9 |
@@ -43,7 +51,6 @@ Column B: fill(//*[@id="target"], ${myVar})
 
 ### 🔴 High Priority Roadmap
 - [ ] **Schedule & Triggers**: Auto-run profiles by schedule or URL pattern
-- [ ] **Data Encryption**: Local encryption for saved datasets
 
 ### 🟡 Medium Priority
 - [ ] **Performance Mode**: Parallel processing (max 3 tabs)

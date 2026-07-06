@@ -46,6 +46,21 @@ window.DataManager = {
         try {
             const result = await storageLocal.get(['appData']);
             DataManager.appData = result.appData ? DataManager.validateAndSanitize(result.appData) : { ...DataManager.DEFAULT_DATA };
+
+            // Decrypt API key if stored in encrypted format
+            if (DataManager.appData.aiConfig && DataManager.appData.aiConfig.apiKey) {
+                const keyData = DataManager.appData.aiConfig.apiKey;
+                if (typeof keyData === 'object' && keyData.encrypted && keyData.iv) {
+                    try {
+                        if (window.CryptoUtils) {
+                            DataManager.appData.aiConfig.apiKey = await window.CryptoUtils.decrypt(keyData.encrypted, keyData.iv);
+                        }
+                    } catch (decErr) {
+                        console.error('[DataManager] Decryption of API Key failed:', decErr);
+                        DataManager.appData.aiConfig.apiKey = ""; // fallback/clear if failed
+                    }
+                }
+            }
             return DataManager.appData;
         } catch (e) {
             console.error('[DataManager] Load Error:', e);
@@ -56,7 +71,24 @@ window.DataManager = {
 
     save: async function () {
         if (!DataManager.appData) return;
-        try { await storageLocal.set({ appData: DataManager.appData }); }
+        try {
+            // Clone appData to encrypt copy without mutating in-memory cleartext version
+            const rawDataToSave = JSON.parse(JSON.stringify(DataManager.appData));
+
+            // Encrypt API key if it's a cleartext string
+            if (rawDataToSave.aiConfig && rawDataToSave.aiConfig.apiKey && typeof rawDataToSave.aiConfig.apiKey === 'string') {
+                const cleartextKey = rawDataToSave.aiConfig.apiKey.trim();
+                if (cleartextKey !== "" && window.CryptoUtils) {
+                    try {
+                        rawDataToSave.aiConfig.apiKey = await window.CryptoUtils.encrypt(cleartextKey);
+                    } catch (encErr) {
+                        console.error('[DataManager] Encryption of API Key failed:', encErr);
+                    }
+                }
+            }
+
+            await storageLocal.set({ appData: rawDataToSave });
+        }
         catch (e) { console.error('[DataManager] Save Error:', e); throw e; }
     },
 

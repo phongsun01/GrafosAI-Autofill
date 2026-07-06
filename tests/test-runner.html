@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GrafosAI-Autofill Test Runner</title>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        h1 {
+            color: #38bdf8;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .summary {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+        .summary span {
+            font-weight: bold;
+        }
+        .passed-count { color: #4ade80; }
+        .failed-count { color: #f87171; }
+        .test-case {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .test-case.passed {
+            border-left: 4px solid #4ade80;
+        }
+        .test-case.failed {
+            border-left: 4px solid #f87171;
+            background-color: #2d1e2e;
+        }
+        .test-name {
+            font-weight: 500;
+        }
+        .test-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .passed .test-status {
+            background-color: #064e3b;
+            color: #34d399;
+        }
+        .failed .test-status {
+            background-color: #7f1d1d;
+            color: #f87171;
+        }
+        .error-details {
+            margin-top: 8px;
+            padding: 8px;
+            background-color: #000;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #f87171;
+            white-space: pre-wrap;
+            width: 100%;
+        }
+        .test-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        .test-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+    </style>
+    
+    <!-- Setup mocks BEFORE loading extension scripts -->
+    <script>
+        // Mock Chrome Extension environment
+        window.chrome = {
+            runtime: {
+                id: "mock-extension-id-12345"
+            },
+            storage: {
+                local: {
+                    store: {},
+                    get: function(keys, callback) {
+                        let res = {};
+                        if (typeof keys === 'string') {
+                            res[keys] = this.store[keys];
+                        } else if (Array.isArray(keys)) {
+                            keys.forEach(k => {
+                                res[k] = this.store[k];
+                            });
+                        } else {
+                            res = { ...this.store };
+                        }
+                        setTimeout(() => callback(res), 0);
+                    },
+                    set: function(items, callback) {
+                        Object.assign(this.store, items);
+                        if (callback) setTimeout(callback, 0);
+                    },
+                    remove: function(keys, callback) {
+                        if (typeof keys === 'string') {
+                            delete this.store[keys];
+                        } else if (Array.isArray(keys)) {
+                            keys.forEach(k => delete this.store[k]);
+                        }
+                        if (callback) setTimeout(callback, 0);
+                    },
+                    getBytesInUse: function(callback) {
+                        if (callback) setTimeout(() => callback(100), 0);
+                        return Promise.resolve(100);
+                    }
+                }
+            }
+        };
+
+        // Define global storageLocal helper
+        window.storageLocal = {
+            get: (keys) => new Promise((resolve) => {
+                chrome.storage.local.get(keys, resolve);
+            }),
+            set: (items) => new Promise((resolve) => {
+                chrome.storage.local.set(items, resolve);
+            }),
+            remove: (keys) => new Promise((resolve) => {
+                chrome.storage.local.remove(keys, resolve);
+            })
+        };
+
+        // Mock logger dependencies
+        window.Logger = {
+            info: (...args) => console.log('[MOCK-INFO]', ...args),
+            warn: (...args) => console.warn('[MOCK-WARN]', ...args),
+            error: (...args) => console.error('[MOCK-ERROR]', ...args),
+            debug: (...args) => console.log('[MOCK-DEBUG]', ...args)
+        };
+
+        // Minimal configuration mock
+        window.APP_CONFIG = {
+            security: { maxStorageSize: 5 * 1024 * 1024 },
+            rateLimiting: { geminiMaxRequests: 60, geminiTimeWindow: 60000 }
+        };
+    </script>
+
+    <!-- Load extension library files -->
+    <script src="../papaparse.min.js"></script>
+    <script src="../crypto-utils.js"></script>
+    <script src="../security-utils.js"></script>
+    <script src="../data-manager.js"></script>
+    <script src="../rate-limiter.js"></script>
+    <script src="../ai-engine.js"></script>
+
+    <!-- Simple Testing framework -->
+    <script>
+        const testCases = [];
+        let passed = 0;
+        let failed = 0;
+
+        window.test = function(name, fn) {
+            testCases.push({ name, fn });
+        };
+
+        window.assert = {
+            ok(val, msg) {
+                if (!val) throw new Error(msg || `Expected truthy value, got ${val}`);
+            },
+            equal(a, b, msg) {
+                if (a !== b) throw new Error(msg || `Expected ${a} to equal ${b}`);
+            },
+            throwsAsync: async function(fn, regex, msg) {
+                try {
+                    await fn();
+                } catch (e) {
+                    if (regex && !regex.test(e.message)) {
+                        throw new Error(msg || `Expected error matching ${regex}, got "${e.message}"`);
+                    }
+                    return; // Passed
+                }
+                throw new Error(msg || "Expected function to throw an error");
+            }
+        };
+
+        async function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            passed = 0;
+            failed = 0;
+
+            for (const tc of testCases) {
+                const item = document.createElement('div');
+                item.className = 'test-case';
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'test-wrapper';
+                
+                const row = document.createElement('div');
+                row.className = 'test-row';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'test-name';
+                nameSpan.textContent = tc.name;
+                row.appendChild(nameSpan);
+
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'test-status';
+                row.appendChild(statusSpan);
+                wrapper.appendChild(row);
+                item.appendChild(wrapper);
+
+                try {
+                    await tc.fn();
+                    item.classList.add('passed');
+                    statusSpan.textContent = 'PASSED';
+                    passed++;
+                } catch (err) {
+                    item.classList.add('failed');
+                    statusSpan.textContent = 'FAILED';
+                    failed++;
+                    
+                    const details = document.createElement('div');
+                    details.className = 'error-details';
+                    details.textContent = err.stack || err.message;
+                    wrapper.appendChild(details);
+                }
+                
+                resultsDiv.appendChild(item);
+            }
+
+            document.getElementById('passed-count').textContent = passed;
+            document.getElementById('failed-count').textContent = failed;
+            document.getElementById('total-count').textContent = testCases.length;
+        }
+
+        window.onload = () => {
+            // Test files should register tests on window load
+            setTimeout(runTests, 100);
+        };
+    </script>
+
+    <!-- Load the actual unit tests -->
+    <script src="data-manager.test.js"></script>
+    <script src="ai-engine.test.js"></script>
+</head>
+<body>
+    <h1>
+        <span>GrafosAI-Autofill Unit Tests 🚀</span>
+        <button onclick="runTests()" style="background:#0284c7; color:white; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">Run again</button>
+    </h1>
+    <div class="summary">
+        Total Tests: <span id="total-count">0</span> | 
+        Passed: <span id="passed-count" class="passed-count">0</span> | 
+        Failed: <span id="failed-count" class="failed-count">0</span>
+    </div>
+    <div id="results">Running tests...</div>
+</body>
+</html>

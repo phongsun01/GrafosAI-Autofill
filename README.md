@@ -1,6 +1,6 @@
 # GrafosAI - Sheet Automator Pro 🚀
 
-![Version](https://img.shields.io/badge/version-3.0.9-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-3.1.0-blue?style=flat-square)
 ![Manifest](https://img.shields.io/badge/manifest-v3-green?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-orange?style=flat-square)
 

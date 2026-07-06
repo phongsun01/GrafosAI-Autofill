@@ -72,7 +72,22 @@ Nguyên lý: Giả định mọi kênh truyền tin đều có thể bị lộ.
 
 ---
 
-## ⚙️ Cấu Hình Bảo Mật (Proposed Config)
+## 🔒 Mã Hoá Dữ Liệu Lưu Trữ (Local Data Encryption - v3.1.0)
+
+Để bảo vệ các thông tin cấu hình nhạy cảm (như Gemini API Key), extension triển khai cơ chế mã hoá nâng cao trước khi ghi dữ liệu xuống bộ lưu trữ của Chrome (`chrome.storage.local`):
+
+### 1. Thuật toán Mã hoá (Encryption Algorithm)
+- Sử dụng **AES-GCM (256-bit)** làm thuật toán mã hoá cốt lõi thông qua **Web Crypto API** có sẵn trên trình duyệt.
+- Khoá mã hoá được dẫn xuất (derive) bằng thuật toán **PBKDF2** từ ID độc nhất của extension (`chrome.runtime.id` hoặc khoá dự phòng) kết hợp với chuỗi muối (`salt`).
+- Mỗi lần lưu trữ, một giá trị vector khởi tạo ngẫu nhiên (**IV - Initialization Vector 12-byte**) mới sẽ được sinh ra thông qua `crypto.getRandomValues()` để đảm bảo tính ngẫu nhiên (không trùng lặp cipher text).
+
+### 2. Vòng đời khoá & Dữ liệu
+- **Khi Lưu (Save):** API key ở dạng cleartext trong bộ nhớ RAM tạm thời được nhân bản, mã hoá bất đồng bộ thành đối tượng chứa mảng byte đã mã hoá (`encrypted`) và vector khởi tạo (`iv`), sau đó ghi xuống bộ nhớ lưu trữ vật lý. Dữ liệu vật lý ở file lưu trữ của Chrome là hoàn toàn không đọc được trực tiếp.
+- **Khi Tải (Load):** Khi khởi động Extension Popup, dữ liệu đã mã hoá được nạp và giải mã tự động bằng khoá động. API Key hiển thị ở chế độ bình thường trong phiên làm việc RAM nhưng được bảo vệ 100% ở dạng tĩnh (at rest).
+
+---
+
+## ⚙️ Cấu HÌnh Bảo Mật (Proposed Config)
 
 ```javascript
 security: {
