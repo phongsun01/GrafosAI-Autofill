@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.1] - 2026-07-17
+
+### Added
+- **Variables Encryption**: Implemented AES-GCM 256-bit encryption for sensitive extracted variables at rest in `chrome.storage.local`.
+- **UI Variable Masking**: Masked sensitive variables visually with `••••••••` in the popup UI variables table.
+- **Unit Tests**: Added test cases for variable encryption and pattern matching.
+
+### Fixed
+- **XPath Sanitization**: Fixed character-whitelist parsing bug in `sanitizeXPath` where the sanitized output was discarded.
+
+---
+
 ## [3.1.0] - 2026-07-17
 
 ### Added

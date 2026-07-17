@@ -1,9 +1,15 @@
 # Project Status
 
-**Current Version:** 3.1.0 (Stable)
-**Last Updated:** 2026-07-06
+**Current Version:** 3.1.1 (Stable)
+**Last Updated:** 2026-07-17
 
 ## Recent Releases
+### 🚀 v3.1.1 (Stable Release)
+- **Extracted Variables Encryption**: Sensitive variables are now encrypted before saving to chrome.storage.local using AES-GCM (obfuscation at rest).
+- **XPath Sanitization Fix**: Resolved a bug in `sanitizeXPath` where the sanitized whitelist value was discarded.
+- **UI Masking**: Masked sensitive variables with `••••••••` in the variable dashboard to prevent visual leak.
+- **Documentation Update**: Clarified encryption security parameters to denote obfuscation at rest.
+
 ### 🚀 v3.1.0 (Stable Release)
 - **Security Hardening**: Removed passive `<all_urls>` content script injection and `web_accessible_resources` for zero-trust exposure. Content scripts are now injected dynamically on-demand.
 - **Data Encryption**: Implemented local credential encryption using Web Crypto API (`AES-GCM` with `PBKDF2` key derivation from extension ID) for Gemini API keys stored at rest.
