@@ -610,7 +610,7 @@ async function runNextItem(retryCount = 0) {
 // Cleanup on extension suspend
 chrome.runtime.onSuspend.addListener(() => {
     Logger.info('[Background] Extension suspending, cleaning up...');
-    if (window.GeminiRateLimiter?.destroy) {
-        window.GeminiRateLimiter.destroy();
+    if (self.GeminiRateLimiter?.destroy) {
+        self.GeminiRateLimiter.destroy();
     }
 });
