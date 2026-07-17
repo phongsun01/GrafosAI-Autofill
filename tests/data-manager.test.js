@@ -76,3 +76,24 @@ test('DataManager load and save encrypts/decrypts Gemini API key', async () => {
     
     assert.equal(loadedData.aiConfig.apiKey, "AIzaSyTestApiKey123", 'Loaded API key should be decrypted back to the original value');
 });
+
+test('CryptoUtils shouldEncrypt matches sensitive patterns correctly', () => {
+    assert.ok(window.CryptoUtils.shouldEncrypt('gemini_api_key'), 'gemini_api_key should be sensitive');
+    assert.ok(window.CryptoUtils.shouldEncrypt('password'), 'password should be sensitive');
+    assert.ok(window.CryptoUtils.shouldEncrypt('sessionToken'), 'sessionToken should be sensitive');
+    assert.ok(window.CryptoUtils.shouldEncrypt('auth_credential'), 'auth_credential should be sensitive');
+    assert.ok(!window.CryptoUtils.shouldEncrypt('username'), 'username should not be sensitive');
+    assert.ok(!window.CryptoUtils.shouldEncrypt('email'), 'email should not be sensitive');
+});
+
+test('CryptoUtils encrypts and decrypts variables correctly', async () => {
+    const rawVal = "my-secret-token-value-999";
+    const encryptedData = await window.CryptoUtils.encrypt(rawVal);
+    
+    assert.ok(encryptedData.encrypted, 'Encryption should return encrypted bytes');
+    assert.ok(encryptedData.iv, 'Encryption should return an initialization vector');
+    assert.ok(Array.isArray(encryptedData.encrypted), 'Encrypted data should be an array of bytes');
+    
+    const decrypted = await window.CryptoUtils.decrypt(encryptedData.encrypted, encryptedData.iv);
+    assert.equal(decrypted, rawVal, 'Decrypted value should match the original plaintext');
+});

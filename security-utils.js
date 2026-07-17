@@ -54,7 +54,7 @@ window.SecurityUtils = {
             throw new Error('XPath must be a non-empty string');
         }
 
-        const trimmed = xpath.trim();
+        const trimmed = sanitized.trim();
 
         // Detect dangerous patterns
         const dangerousPatterns = [

@@ -1,6 +1,8 @@
 // MODULE: Background Service Worker (V2.4 - Stop Fix)
 // Utils and storageLocal are available via window.*
 
+importScripts('crypto-utils.js');
+
 // [LOGGING] Inline Logger for service worker (can't load external scripts)
 const Logger = {
     info: (...args) => console.log('[INFO]', ...args),
@@ -463,13 +465,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     console.warn(`[Variables] Truncated "${request.key}" to ${maxLen} chars`);
                 }
 
+                let storedValue = value;
+                let isEncrypted = false;
+                let iv = null;
+
+                // Encrypt sensitive variables
+                if (self.CryptoUtils && self.CryptoUtils.shouldEncrypt(request.key)) {
+                    try {
+                        const encryptedData = await self.CryptoUtils.encrypt(value);
+                        storedValue = encryptedData.encrypted; // Array of bytes
+                        iv = encryptedData.iv;
+                        isEncrypted = true;
+                        console.log(`[Security] Encrypted sensitive variable "${request.key}"`);
+                    } catch (err) {
+                        console.error(`[Security] Encryption failed for "${request.key}":`, err);
+                    }
+                }
+
                 // [FIX] Add timestamp for TTL tracking
                 bgState.variables[request.key] = {
-                    value: value,
+                    value: storedValue,
+                    isEncrypted: isEncrypted,
+                    iv: iv,
                     _timestamp: Date.now()
                 };
 
-                console.log(`[DEBUG] SET_VARIABLE: key="${request.key}", value="${value}", stored as:`, bgState.variables[request.key]);
+                console.log(`[DEBUG] SET_VARIABLE: key="${request.key}", encrypted=${isEncrypted}`);
 
                 await storageLocal.set({ variables: bgState.variables });
                 sendResponse({ success: true });
@@ -477,27 +498,47 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
 
             if (request.action === "GET_VARIABLES") {
-                console.log(`[DEBUG] GET_VARIABLES: returning`, bgState.variables || {});
-                sendResponse({ vars: bgState.variables || {} });
-                return;
+                const decryptedVars = {};
+                for (const [key, varObj] of Object.entries(bgState.variables || {})) {
+                    if (varObj && typeof varObj === 'object' && varObj.isEncrypted && varObj.value && varObj.iv) {
+                        try {
+                            if (self.CryptoUtils) {
+                                const decryptedVal = await self.CryptoUtils.decrypt(varObj.value, varObj.iv);
+                                decryptedVars[key] = {
+                                    value: decryptedVal,
+                                    _timestamp: varObj._timestamp
+                                };
+                            } else {
+                                decryptedVars[key] = varObj;
+                            }
+                        } catch (decErr) {
+                            console.error(`[Security] Decryption failed for "${key}":`, decErr);
+                            decryptedVars[key] = { value: "", _timestamp: varObj._timestamp };
+                        }
+                    } else {
+                        decryptedVars[key] = varObj;
+                    }
+                }
+                sendResponse({ vars: decryptedVars });
+                return true;
             }
 
             if (request.action === "DELETE_VARIABLE") {
                 if (bgState.variables && bgState.variables[request.key]) {
                     delete bgState.variables[request.key];
-                    await storageLocal.set({ bgState: bgState });
+                    await storageLocal.set({ variables: bgState.variables });
                     sendResponse({ success: true });
                 } else {
                     sendResponse({ success: false });
                 }
-                return;
+                return true;
             }
 
             if (request.action === "CLEAR_VARIABLES") {
                 bgState.variables = {};
-                await storageLocal.set({ bgState: bgState });
+                await storageLocal.set({ variables: bgState.variables });
                 sendResponse({ success: true });
-                return;
+                return true;
             }
 
             // --- MACRO SYSTEM HANDLERS ---

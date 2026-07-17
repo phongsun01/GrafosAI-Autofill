@@ -72,18 +72,21 @@ Nguyên lý: Giả định mọi kênh truyền tin đều có thể bị lộ.
 
 ---
 
-## 🔒 Mã Hoá Dữ Liệu Lưu Trữ (Local Data Encryption - v3.1.0)
+## 🔒 Làm Mờ/Mã Hoá Dữ Liệu Tĩnh (Obfuscation / Encryption at Rest - v3.1.0)
 
-Để bảo vệ các thông tin cấu hình nhạy cảm (như Gemini API Key), extension triển khai cơ chế mã hoá nâng cao trước khi ghi dữ liệu xuống bộ lưu trữ của Chrome (`chrome.storage.local`):
+Để bảo vệ các thông tin cấu hình nhạy cảm (như Gemini API Key và các biến nhạy cảm), extension triển khai cơ chế mã hoá trước khi ghi dữ liệu xuống bộ lưu trữ của Chrome (`chrome.storage.local`):
 
 ### 1. Thuật toán Mã hoá (Encryption Algorithm)
 - Sử dụng **AES-GCM (256-bit)** làm thuật toán mã hoá cốt lõi thông qua **Web Crypto API** có sẵn trên trình duyệt.
-- Khoá mã hoá được dẫn xuất (derive) bằng thuật toán **PBKDF2** từ ID độc nhất của extension (`chrome.runtime.id` hoặc khoá dự phòng) kết hợp với chuỗi muối (`salt`).
-- Mỗi lần lưu trữ, một giá trị vector khởi tạo ngẫu nhiên (**IV - Initialization Vector 12-byte**) mới sẽ được sinh ra thông qua `crypto.getRandomValues()` để đảm bảo tính ngẫu nhiên (không trùng lặp cipher text).
+- Khoá mã hoá được dẫn xuất (derive) bằng thuật toán **PBKDF2** từ ID của extension (`chrome.runtime.id` hoặc khoá dự phòng) kết hợp với chuỗi muối (`salt`).
+- Mỗi lần lưu trữ, một giá trị vector khởi tạo ngẫu nhiên (**IV - Initialization Vector 12-byte**) mới sẽ được sinh ra thông qua `crypto.getRandomValues()`.
+
+> [!NOTE]
+> Do ID của extension (`chrome.runtime.id`) là thông tin công khai (có thể xem qua trang quản lý extension hoặc cửa hàng chrome), cơ chế này hoạt động như một giải pháp **làm mờ dữ liệu tĩnh (obfuscation at rest)** mạnh mẽ nhằm chống lại việc đọc trộm trực tiếp file lưu trữ thô trên đĩa cứng, chứ không chống được kẻ tấn công có quyền thực thi mã trong cùng ngữ cảnh của extension.
 
 ### 2. Vòng đời khoá & Dữ liệu
-- **Khi Lưu (Save):** API key ở dạng cleartext trong bộ nhớ RAM tạm thời được nhân bản, mã hoá bất đồng bộ thành đối tượng chứa mảng byte đã mã hoá (`encrypted`) và vector khởi tạo (`iv`), sau đó ghi xuống bộ nhớ lưu trữ vật lý. Dữ liệu vật lý ở file lưu trữ của Chrome là hoàn toàn không đọc được trực tiếp.
-- **Khi Tải (Load):** Khi khởi động Extension Popup, dữ liệu đã mã hoá được nạp và giải mã tự động bằng khoá động. API Key hiển thị ở chế độ bình thường trong phiên làm việc RAM nhưng được bảo vệ 100% ở dạng tĩnh (at rest).
+- **Khi Lưu (Save):** API key và các biến nhạy cảm ở dạng cleartext trong bộ nhớ RAM tạm thời được mã hoá bất đồng bộ thành đối tượng chứa mảng byte đã mã hoá (`encrypted`) và vector khởi tạo (`iv`), sau đó ghi xuống bộ nhớ lưu trữ vật lý.
+- **Khi Tải (Load):** Khi khởi động Extension Popup hoặc nhận lệnh từ content script, dữ liệu đã mã hoá được nạp và giải mã tự động bằng khoá động để sử dụng trong RAM.
 
 ---
 
@@ -105,8 +108,9 @@ security: {
 
 1. Không thể chống lại Keylogger ở cấp độ hệ điều hành (OS).
 2. Không thể ngăn chặn các extension độc hại khác có quyền can thiệp sâu.
-3. Dữ liệu trong file Excel/Google Sheet vẫn là trách nhiệm của người dùng.
-4. Memory không được xóa hoàn toàn 100% cho đến khi Garbage Collector chạy (Dùng kỹ thuật Overwrite để giảm thiểu).
+3. Cơ chế mã hóa sử dụng khóa dẫn xuất từ `chrome.runtime.id` (công khai). Do đó, kẻ tấn công có khả năng đọc được storage cục bộ của Chrome và biết cách derive key vẫn có thể giải mã được dữ liệu (đây là giải pháp **Obfuscation at Rest**).
+4. Dữ liệu trong file Excel/Google Sheet vẫn là trách nhiệm của người dùng.
+5. Memory không được xóa hoàn toàn 100% cho đến khi Garbage Collector chạy (Dùng kỹ thuật Overwrite để giảm thiểu).
 
 ---
 

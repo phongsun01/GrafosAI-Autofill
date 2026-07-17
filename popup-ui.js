@@ -283,14 +283,21 @@ window.PopupUI = {
             keys.forEach(key => {
                 // [FIX] Handle both old format (direct value) and new format ({value, _timestamp})
                 const varData = vars[key];
-                const displayValue = (typeof varData === 'object' && varData.value !== undefined)
+                let displayValue = (typeof varData === 'object' && varData.value !== undefined)
                     ? varData.value
                     : varData;
 
+                let isSensitive = false;
+                if (window.CryptoUtils && window.CryptoUtils.shouldEncrypt(key)) {
+                    isSensitive = true;
+                    displayValue = '••••••••';
+                }
+
+                const titleText = isSensitive ? '[PROTECTED]' : displayValue;
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td style="font-weight:600; color:var(--primary)">${key}</td>
-                    <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${displayValue}">${displayValue}</td>
+                    <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${titleText}">${displayValue}</td>
                     <td><button class="btn-action btn-del" data-key="${key}">×</button></td>
                 `;
                 row.querySelector('.btn-del').onclick = () => {

@@ -1,7 +1,7 @@
 // Crypto Utilities Module - v2.6.0
 // Provides encryption/decryption for sensitive data using Web Crypto API
 
-window.CryptoUtils = {
+const CryptoUtils = {
     /**
      * Derive encryption key from extension ID
      * @returns {Promise<CryptoKey>}
@@ -105,3 +105,7 @@ window.CryptoUtils = {
         return SENSITIVE_PATTERNS.some(pattern => pattern.test(varName));
     }
 };
+
+if (typeof window !== 'undefined') window.CryptoUtils = CryptoUtils;
+if (typeof self !== 'undefined') self.CryptoUtils = CryptoUtils;
+if (typeof globalThis !== 'undefined') globalThis.CryptoUtils = CryptoUtils;
