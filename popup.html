@@ -34,9 +34,16 @@
     <div class="tab-btn" id="tabTools" data-target="viewTools">Tools 🛠️</div>
     <div class="tab-btn" id="tabAI" data-target="viewAI">AI 🤖</div>
     <div class="tab-btn" id="tabConfig" data-target="viewConfig">Config ⚙️</div>
+    <div class="tab-btn" id="btnUiMode" style="flex:0 0 40px" title="Chuyển popup / side panel">◧</div>
   </div>
 
   <div id="viewRun" class="tab-content active">
+    <!-- Target Tab Indicator -->
+    <div id="targetTabIndicator" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:4px 8px; background:var(--bg-sub); border-radius:4px; font-size:11px; color:var(--text-sub);">
+      <span>Đang trỏ:</span>
+      <span id="lblTargetDomain" style="font-weight:600; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Đang tải...</span>
+    </div>
+
     <!-- 1. SHARED: Profile/Process Config -->
     <div class="group-box">
       <label>1. Chọn Profile</label>
@@ -95,8 +102,7 @@
       <input type="text" id="txtSearchBatch" placeholder="🔍 Tìm kiếm dữ liệu..."
         style="width:100%; margin-bottom:10px;">
 
-      <div class="batch-container"
-        style="max-height:250px; overflow-y:auto; border:1px solid var(--border); border-radius:4px;">
+      <div class="batch-container">
         <table id="batchTable" style="width:100%; border-collapse:collapse;">
           <thead>
             <tr>

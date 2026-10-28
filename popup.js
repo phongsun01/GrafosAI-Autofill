@@ -48,6 +48,63 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Bind Tools Tab
         window.PopupUI.bindToolsTabEvent();
 
+        // --- UI MODE TOGGLE (popup <-> side panel) ---
+        const isPanel = new URLSearchParams(location.search).get('mode') === 'panel';
+        document.body.classList.toggle('is-panel', isPanel);
+
+        const btnMode = document.getElementById('btnUiMode');
+        if (btnMode) {
+            if (!chrome.sidePanel || !chrome.sidePanel.open) {
+                btnMode.style.display = 'none'; // trình duyệt không hỗ trợ -> ẩn nút
+            } else {
+                btnMode.textContent = isPanel ? '🗗' : '◧';
+                btnMode.title = isPanel ? 'Chuyển sang popup' : 'Chuyển sang side panel';
+                btnMode.onclick = async () => {
+                    try {
+                        if (!isPanel) {
+                            const win = await chrome.windows.getCurrent();
+                            await chrome.sidePanel.open({ windowId: win.id });
+                            await chrome.storage.local.set({ uiMode: 'panel' });
+                        } else {
+                            await chrome.storage.local.set({ uiMode: 'popup' });
+                            if (chrome.sidePanel?.close) {
+                                const win = await chrome.windows.getCurrent();
+                                await chrome.sidePanel.close({ windowId: win.id });
+                            } else {
+                                window.PopupUI.showToast('Đã đổi sang chế độ Popup. Bạn có thể đóng thanh bên này.', 'info');
+                            }
+                        }
+                        window.close();
+                    } catch (e) {
+                        window.PopupUI.showToast('Không chuyển được chế độ: ' + e.message, 'error');
+                    }
+                };
+            }
+        }
+
+        // --- Target Domain Display ---
+        async function updateTargetDomainDisplay() {
+            const el = document.getElementById('lblTargetDomain');
+            if (!el) return;
+            try {
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (tab && tab.url) {
+                    const u = new URL(tab.url);
+                    el.textContent = `${u.hostname}`;
+                    el.title = tab.url;
+                } else {
+                    el.textContent = '⚠️ Chưa cấp quyền';
+                    el.title = 'Bấm vào biểu tượng extension trên tab đó để cấp quyền';
+                }
+            } catch (e) {
+                el.textContent = '...';
+            }
+        }
+        updateTargetDomainDisplay();
+        chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
+            if (tab && tab.active) updateTargetDomainDisplay();
+        });
+
         // Listen for Background Updates
         chrome.runtime.onMessage.addListener((request) => {
             if (request.action === "UI_UPDATE" && request.data) {
@@ -64,17 +121,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         async function requestTabPermission() {
             try {
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                if (!tab || !tab.url) return false;
+                if (!tab) {
+                    window.PopupUI.showToast("⚠️ Không tìm thấy tab nào!", 'warning');
+                    return false;
+                }
+                if (!tab.url) return true;
                 if (tab.url.includes("docs.google.com") || tab.url.includes("googleusercontent.com")) return true;
                 const url = new URL(tab.url);
                 if (!['http:', 'https:'].includes(url.protocol)) return true;
                 const origin = url.origin + '/*';
-                const has = await chrome.permissions.contains({ origins: [origin] });
-                if (has) return true;
-                const granted = await chrome.permissions.request({ origins: [origin] });
-                if (!granted) { window.PopupUI.showToast(`⚠️ Cần quyền truy cập ${url.hostname}`, 'warning'); return false; }
+                try {
+                    const has = await chrome.permissions.contains({ origins: [origin] });
+                    if (has) return true;
+                    const granted = await chrome.permissions.request({ origins: [origin] });
+                    if (!granted) { window.PopupUI.showToast(`⚠️ Cần quyền truy cập ${url.hostname}`, 'warning'); return false; }
+                    return true;
+                } catch (permErr) {
+                    console.warn("Permission request bypassed/failed:", permErr);
+                    return true;
+                }
+            } catch (e) {
+                console.error("requestTabPermission error:", e);
                 return true;
-            } catch (e) { return false; }
+            }
         }
 
         async function startNewBatch(rows) {
@@ -129,7 +198,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 chrome.runtime.sendMessage({
                     action: "START_BATCH", queue: queue, tabId: tab.id, profileName: p.name, processName: proc.name
                 }, (response) => {
-                    if (chrome.runtime.lastError) return;
+                    if (chrome.runtime.lastError) {
+                        console.error("START_BATCH error:", chrome.runtime.lastError);
+                        window.PopupUI.showToast("Lỗi kết nối Background: " + chrome.runtime.lastError.message, 'error');
+                        return;
+                    }
                     if (response && !response.success) window.PopupUI.showToast(response.error, 'error');
                 });
             } catch (e) { window.PopupUI.showToast(e.message, 'error'); }
@@ -137,8 +210,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
         // --- HANDLERS ---
-        dom.btn.run.onclick = () => { try { startNewBatch(window.Utils.parseRange(dom.input.range.value)); } catch (e) { window.PopupUI.showToast(e.message, 'error'); } };
-        dom.btn.batchRun.onclick = () => { try { const rows = (window.DataManager.appData.selectedBatchRows || []).map(Number); startNewBatch(rows); } catch (e) { window.PopupUI.showToast(e.message, 'error'); } };
+        dom.btn.run.onclick = () => {
+            try {
+                const rows = window.Utils.parseRange(dom.input.range.value);
+                startNewBatch(rows).catch(err => {
+                    console.error("startNewBatch error:", err);
+                    window.PopupUI.showToast(err.message, 'error');
+                });
+            } catch (e) {
+                window.PopupUI.showToast(e.message, 'error');
+            }
+        };
+
+        dom.btn.batchRun.onclick = () => {
+            try {
+                const rows = (window.DataManager.appData.selectedBatchRows || []).map(Number);
+                startNewBatch(rows).catch(err => {
+                    console.error("startNewBatch batch error:", err);
+                    window.PopupUI.showToast(err.message, 'error');
+                });
+            } catch (e) {
+                window.PopupUI.showToast(e.message, 'error');
+            }
+        };
 
         // Batch Search Handler
         if (dom.input.searchBatch) {
@@ -266,6 +360,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // --- XPATH PICKER LOGIC ---
         let xpathPickerActive = false;
+        let pickerTabId = null;
+
+        chrome.tabs.onActivated?.addListener(async (activeInfo) => {
+            if (xpathPickerActive && pickerTabId != null) {
+                chrome.tabs.sendMessage(pickerTabId, { action: 'XPATH_PICKER_STOP' }).catch(() => {});
+            }
+            xpathPickerActive = false;
+            pickerTabId = null;
+            if (typeof renderXPathTab === 'function') renderXPathTab();
+            updateTargetDomainDisplay();
+        });
 
         function renderXPathTab() {
             if (!dom.status.xpathMode) return;
@@ -278,10 +383,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (!tab) return window.PopupUI.showToast('Không tìm thấy tab!', 'error');
             if (tab.url.startsWith('chrome://')) return window.PopupUI.showToast('Không thể chạy trên trang nội bộ Chrome!', 'warning');
+            if (tab.url.startsWith('edge://')) return window.PopupUI.showToast('Không thể chạy trên trang nội bộ Edge!', 'warning');
+            if (!(await requestTabPermission())) return;
 
             try {
                 await chrome.tabs.sendMessage(tab.id, { action: 'XPATH_PICKER_START' });
-                onPickerStarted();
+                onPickerStarted(tab.id);
             } catch (e) {
                 console.log("Message failed, attempting injection...", e);
                 try {
@@ -296,7 +403,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     // Retry message
                     await chrome.tabs.sendMessage(tab.id, { action: 'XPATH_PICKER_START' });
-                    onPickerStarted();
+                    onPickerStarted(tab.id);
 
                 } catch (injectError) {
                     console.error(injectError);
@@ -306,13 +413,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     window.PopupUI.showToast(msg, 'error');
                     xpathPickerActive = false;
+                    pickerTabId = null;
                     renderXPathTab(); // ensure UI reset
                 }
             }
         };
 
-        function onPickerStarted() {
+        function onPickerStarted(tabId) {
             xpathPickerActive = true;
+            pickerTabId = tabId || null;
             renderXPathTab();
             window.PopupUI.showToast('🎯 Chế độ chọn XPath đã bật!', 'success');
         }
@@ -321,11 +430,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         async function stopXPathPicker() {
             xpathPickerActive = false;
+            const targetId = pickerTabId;
+            pickerTabId = null;
             renderXPathTab(); // immediate UI update
             try {
-                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                if (tab) {
-                    await chrome.tabs.sendMessage(tab.id, { action: 'XPATH_PICKER_STOP' });
+                if (targetId != null) {
+                    await chrome.tabs.sendMessage(targetId, { action: 'XPATH_PICKER_STOP' }).catch(() => {});
+                } else {
+                    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    if (tab) {
+                        await chrome.tabs.sendMessage(tab.id, { action: 'XPATH_PICKER_STOP' }).catch(() => {});
+                    }
                 }
                 window.PopupUI.showToast('⏹️ Đã thoát chế độ XPath', 'info');
             } catch (e) { console.error(e); }

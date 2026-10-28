@@ -63,6 +63,25 @@ const Utils = {
     }
 };
 
+// --- UI MODE: popup <-> side panel ---
+// Lưu ở khoá riêng 'uiMode' (KHÔNG để trong appData vì validateAndSanitize sẽ xoá khoá lạ)
+async function applyUiMode() {
+    try {
+        const { uiMode = 'popup' } = await storageLocal.get(['uiMode']);
+        const usePanel = uiMode === 'panel' && !!chrome.sidePanel;
+        await chrome.action.setPopup({ popup: usePanel ? '' : 'popup.html' });
+        if (chrome.sidePanel?.setPanelBehavior) {
+            await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: usePanel });
+        }
+    } catch (e) {
+        Logger.error('applyUiMode failed:', e);
+    }
+}
+applyUiMode(); // chạy mỗi lần service worker thức dậy
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.uiMode) applyUiMode();
+});
+
 
 const defaultState = {
     status: "IDLE",
@@ -253,11 +272,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 // Cleanup on extension restart/update
 chrome.runtime.onStartup.addListener(() => {
     injectedTabs.clear();
+    applyUiMode();
     console.log('[Background] Extension started, cleared injectedTabs');
 });
 
 chrome.runtime.onInstalled.addListener(() => {
     injectedTabs.clear();
+    applyUiMode();
     console.log('[Background] Extension installed/updated, cleared injectedTabs');
 });
 
