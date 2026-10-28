@@ -104,8 +104,13 @@ window.ContentCommands = {
             if (lastComma > 0) {
                 const xpath = inner.substring(0, lastComma).trim();
                 const val = inner.substring(lastComma + 1).trim();
-                return { type: 'fill', params: { xpath, value: val } };
+                // Only split as xpath+value if left side looks like an XPath
+                if (xpath.startsWith('/') || xpath.startsWith('(') || xpath.startsWith('.')) {
+                    return { type: 'fill', params: { xpath, value: val } };
+                }
             }
+            // No comma OR left side isn't XPath → treat whole inner as XPath, no value
+            return { type: 'fill', params: { xpath: inner.trim() } };
         }
 
         return { type: 'fill', params: { xpath: cmd } };

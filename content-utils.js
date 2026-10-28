@@ -337,6 +337,44 @@ window.ContentUtils = {
 
     // --- FORM FILLING LOGIC ---
 
+    /**
+     * Fill an nz-date-picker by opening the popup then setting value.
+     * ng-zorro only accepts input when the calendar overlay is open.
+     * @param {HTMLInputElement} input - The <input> inside <nz-date-picker>
+     * @param {string} dateStr - Date string in site's expected format (e.g. "dd/MM/yyyy")
+     */
+    async fillNzDatePicker(input, dateStr) {
+        // 1. Click + focus to open the calendar popup
+        input.click();
+        input.focus();
+        await new Promise(r => setTimeout(r, 400));
+
+        // 2. Clear existing value via native setter so Angular sees the change
+        const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+        if (nativeSetter) nativeSetter.call(input, '');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise(r => setTimeout(r, 100));
+
+        // 3. Set new date value
+        if (nativeSetter) nativeSetter.call(input, dateStr);
+        input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: dateStr }));
+        await new Promise(r => setTimeout(r, 200));
+
+        // 4. Confirm with Enter (ng-zorro picks the typed date on Enter)
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keyup',  { key: 'Enter', keyCode: 13, bubbles: true }));
+        await new Promise(r => setTimeout(r, 200));
+
+        // 5. Close popup and trigger blur so Angular form marks it dirty/valid
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.dispatchEvent(new Event('blur',   { bubbles: true }));
+        input.blur();
+
+        console.log(`[GrafosAI] fillNzDatePicker: set "${dateStr}" → class now: ${input.closest('nz-date-picker')?.className || '?'}`);
+        return true;
+    },
+
     async fillField(element, value) {
         if (!element) return false;
         try { element.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { }
@@ -353,6 +391,14 @@ window.ContentUtils = {
         const tagNameInitial = element.tagName.toLowerCase();
         if ((tagNameInitial === 'nz-select' || element.tagName === 'NZ-SELECT') && !nzSelect) {
             await this.handleAngularSelect(element, String(value)); return true;
+        }
+
+        // nz-date-picker detection: element IS the picker or is inside one
+        const datePicker = element.closest('nz-date-picker') ||
+            (tagNameInitial === 'nz-date-picker' ? element : null);
+        if (datePicker) {
+            const dateInput = datePicker.querySelector('input') || element;
+            return await this.fillNzDatePicker(dateInput, String(value));
         }
         const isPotentialGroup = element.querySelector('nz-checkbox-group') ||
             tagNameInitial === 'nz-checkbox-group' ||
@@ -379,7 +425,12 @@ window.ContentUtils = {
         if (!this.isTrulyVisible(element)) return false;
 
         let finalValue = String(value);
-        if (inputType === 'number') finalValue = finalValue.replace(/,/g, '').trim();
+        if (inputType === 'number') {
+            const hint = `${element.getAttribute('formcontrolname') || ''} ${element.name || ''} ${element.id || ''}`;
+            finalValue = /phone|tel|sdt|mobile/i.test(hint)
+                ? finalValue.replace(/\D/g, '')          // 0966.975.039 → 0966975039
+                : finalValue.replace(/,/g, '').trim();   // số thường: chỉ bỏ dấu phẩy
+        }
 
         element.focus();
         const delay = (typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG.elementFillDelay : 50);
