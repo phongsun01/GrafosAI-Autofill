@@ -1,54 +1,47 @@
 # Privacy Policy for GrafosAI-Autofill
 
-**Effective Date:** July 3, 2026
+**Effective Date:** October 29, 2026  
+**Version:** 4.0.1  
 
-At GrafosAI-Autofill, we are committed to protecting your privacy. This Privacy Policy explains how our browser extension collects, uses, and safeguards your information.
+At GrafosAI-Autofill, we are committed to transparency and user privacy. This Privacy Policy outlines how the extension handles data, interactions with third-party services, and local security practices.
 
 ---
 
-## 1. Information Collection and Use
+## 1. Information Collection and Local Processing
 
-GrafosAI-Autofill is designed to run entirely locally in your browser. We respect your privacy and enforce the following principles:
+GrafosAI-Autofill is designed to run self-contained and locally inside your browser:
 
-*   **No Personal Data Collection:** We do not collect, store, or transmit any of your personal data, browsing history, or form inputs to our own servers.
-*   **Local Processing:** All automation actions, XPath queries, and form detection logic are processed entirely on your local machine.
+* **Zero Outbound Telemetry:** We do not collect, store, or transmit your browsing history, keystrokes, personal identity, or automation logs to any external server.
+* **100% Local Execution:** Script execution, DOM traversal, XPath evaluation, and data filling occur entirely on your machine via Chrome Extension APIs and Service Workers.
+* **No External Web Fonts or Assets:** All user interface fonts and stylesheets rely strictly on standard system font stacks without making external network calls to third-party font CDNs.
 
 ---
 
 ## 2. Third-Party Integrations & Data Transmission
 
-To perform its automation tasks, the extension interacts with specific third-party APIs. All interactions are direct and secure:
+The extension only communicates across the network when explicitly commanded by the user for two specific workflows:
 
-*   **Google Sheets Integration:** 
-    *   The extension fetches spreadsheet data from Google Sheets URLs provided by you.
-    *   This data is fetched directly from Google's servers to your browser client using the standard Google Sheets export APIs. It is never routed through any middleman or external servers.
-*   **Gemini API Integration:**
-    *   The extension uses the Gemini API for smart form field detection if configured.
-    *   You must provide your own Gemini API key. This key is stored securely in your browser's local extension storage (`chrome.storage.local`).
-    *   Requests to the Gemini API (`generativelanguage.googleapis.com`) are sent directly from your browser to Google APIs. No third-party servers are involved.
+### A. Google Sheets Data Fetching
+* The extension fetches tabular data directly from Google Sheets URLs provided by the user using Google's direct CSV export endpoint.
+* **Important Privacy Notice:** Because access is unauthenticated (no OAuth token required), your Google Sheet must be configured with link-sharing enabled (*"Anyone with the link can view"*). Users are strongly cautioned against placing passwords, sensitive payment info, or confidential personal data on publicly accessible sheets.
 
----
-
-## 3. Data Storage
-
-*   All configuration settings, active profiles, customized XPaths, and local variables are saved using the browser's local storage (`chrome.storage.local`).
-*   This data remains on your device and is deleted when you uninstall the extension.
+### B. Optional Google Gemini AI Form Scanner
+* When utilizing the AI tab, the extension contacts Google's Generative Language API (`generativelanguage.googleapis.com`) using your personal Gemini API key.
+* **Explicit User Confirmation:** Before sending any form structure, an interactive confirmation dialog is presented.
+* **Sensitive Field Redaction:** Form scanning strictly excludes password values and redacts sensitive field placeholders before transmitting form metadata to the Gemini API.
 
 ---
 
-## 4. Security
+## 3. Data Storage & Local Hardening
 
-We implement security measures including input sanitization, rate limiting, and secure local storage practices to prevent data leakage and ensure safe automation.
-
----
-
-## 5. Changes to This Privacy Policy
-
-We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated effective date.
+* **Local Storage Only:** Profiles, process flows, active variables, and extension settings reside solely in your browser's `chrome.storage.local`.
+* **Obfuscation at Rest:** Sensitive variables and API keys are protected using AES-GCM encryption with keys derived from the extension environment to prevent raw plaintext exposure in profile backups and local inspection.
+* **Data Deletion:** All stored data is immediately deleted when the extension is removed from Google Chrome.
 
 ---
 
-## 6. Contact Us
+## 4. Contact & Open Source
 
-If you have any questions or suggestions about this Privacy Policy, please contact us at:
-*   GitHub Repository: [phongsun01/GrafosAI-Autofill](https://github.com/phongsun01/GrafosAI-Autofill)
+GrafosAI-Autofill is open-source under the MIT License.  
+For technical inquiries, security reports, or code contributions:
+* GitHub Repository: [phongsun01/GrafosAI-Autofill](https://github.com/phongsun01/GrafosAI-Autofill)

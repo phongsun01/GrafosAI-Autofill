@@ -104,12 +104,18 @@ window.ContentCommands = {
             if (lastComma > 0) {
                 const xpath = inner.substring(0, lastComma).trim();
                 const val = inner.substring(lastComma + 1).trim();
-                // Only split as xpath+value if left side looks like an XPath
+                // Only split as xpath+value if left side looks like an XPath and has balanced brackets/parens
                 if (xpath.startsWith('/') || xpath.startsWith('(') || xpath.startsWith('.')) {
-                    return { type: 'fill', params: { xpath, value: val } };
+                    const openP = (xpath.match(/\(/g) || []).length;
+                    const closeP = (xpath.match(/\)/g) || []).length;
+                    const openB = (xpath.match(/\[/g) || []).length;
+                    const closeB = (xpath.match(/\]/g) || []).length;
+                    if (openP === closeP && openB === closeB) {
+                        return { type: 'fill', params: { xpath, value: val } };
+                    }
                 }
             }
-            // No comma OR left side isn't XPath → treat whole inner as XPath, no value
+            // No comma OR comma was inside XPath function/bracket → treat whole inner as XPath, no value
             return { type: 'fill', params: { xpath: inner.trim() } };
         }
 
@@ -175,7 +181,7 @@ window.ContentCommands = {
             /auth/i,
             /credential/i,
             /api[_-]?key/i,
-            /phone|tel|sdt|mobile/i,
+            /phone|tel|sdt|mobile|dienthoai|dien_thoai/i,
             /email/i,
             /cccd|cmnd/i,
             /mst|tax/i,

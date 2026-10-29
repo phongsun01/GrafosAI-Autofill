@@ -100,7 +100,7 @@ const CryptoUtils = {
             /auth/i,
             /credential/i,
             /api[_-]?key/i,
-            /phone|tel|sdt|mobile/i,
+            /phone|tel|sdt|mobile|dienthoai|dien_thoai/i,
             /email/i,
             /cccd|cmnd/i,
             /mst|tax/i,

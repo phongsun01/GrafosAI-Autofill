@@ -639,6 +639,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (!apiKey || !gid) return window.PopupUI.showToast("Thiếu cấu hình AI!", 'error');
 
+            const confirmed = confirm(
+                "⚠️ XÁC NHẬN GỬI CẤU TRÚC FORM LÊN GEMINI AI:\n\n" +
+                "Tiện ích sẽ quét cấu trúc các trường trên trang (tag, id, name, placeholder, label) và gửi đến Google Gemini API để phân tích.\n\n" +
+                "Lưu ý: Không thực hiện quét trên các form chứa thông tin bảo mật/nhạy cảm. Bạn có đồng ý gửi không?"
+            );
+            if (!confirmed) return;
+
             window.PopupUI.updateAiStatus("Scanning & Generating...", "blue");
 
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

@@ -67,7 +67,7 @@ const SecurityUtils = {
         ];
 
         for (const pattern of dangerousPatterns) {
-            if (pattern.test(trimmed)) {
+            if (pattern.test(xpath) || pattern.test(trimmed)) {
                 console.warn(`[Security] Dangerous XPath pattern detected: ${pattern.source}`);
                 return '';
             }
@@ -282,7 +282,7 @@ const SecurityUtils = {
             /auth/i,
             /credential/i,
             /api[_-]?key/i,
-            /phone|tel|sdt|mobile/i,
+            /phone|tel|sdt|mobile|dienthoai|dien_thoai/i,
             /email/i,
             /cccd|cmnd/i,
             /mst|tax/i,

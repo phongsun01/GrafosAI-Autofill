@@ -485,15 +485,17 @@ window.ContentUtils = {
         });
 
         const formData = visibleElements.map(el => {
+            const isPassword = (el.type || '').toLowerCase() === 'password';
+            const isSensitive = isPassword || (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.isSensitiveElement === 'function' ? SecurityUtils.isSensitiveElement(el) : false);
+
             return {
                 tag: el.tagName.toLowerCase(),
                 type: el.type || '',
                 id: el.id || '',
                 name: el.name || '',
-                placeholder: el.placeholder || '',
+                placeholder: isSensitive ? '[REDACTED]' : (el.placeholder || ''),
                 "aria-label": el.getAttribute('aria-label') || '',
-                label: this.getNearestLabel(el),
-                // XPath is generated later, but we need enough info to identify it
+                label: this.getNearestLabel(el)
             };
         });
 
