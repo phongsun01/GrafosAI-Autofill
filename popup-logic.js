@@ -101,8 +101,10 @@ window.PopupLogic = {
         } catch (e) {
             console.error(e);
             const errShort = e.message.length > 20 ? e.message.substring(0, 20) + '...' : e.message;
-            PopupUI.dom.table.lblTotal.innerHTML = `<span class="error" title="${e.message}">${errShort}</span>`;
-            if (PopupUI.dom.table.batchBody) PopupUI.dom.table.batchBody.innerHTML = `<tr><td colspan="4" class="error">❌ ${e.message}</td></tr>`;
+            const safeMsg = SecurityUtils.escapeHtml(e.message);
+            const safeShort = SecurityUtils.escapeHtml(errShort);
+            PopupUI.dom.table.lblTotal.innerHTML = `<span class="error" title="${safeMsg}">${safeShort}</span>`;
+            if (PopupUI.dom.table.batchBody) PopupUI.dom.table.batchBody.innerHTML = `<tr><td colspan="4" class="error">❌ ${safeMsg}</td></tr>`;
         }
     },
 
@@ -208,8 +210,9 @@ window.PopupLogic = {
 
         p.processes.forEach((proc, i) => {
             const div = document.createElement('div'); div.className = "list-item";
+            const safeProcName = SecurityUtils.escapeHtml(proc.name);
             div.innerHTML = `
-                <div style="flex:1;cursor:pointer"><b>${proc.name}</b></div>
+                <div style="flex:1;cursor:pointer"><b>${safeProcName}</b></div>
                 <div class="item-actions">
                     <button class="btn-icon btn-up">▲</button>
                     <button class="btn-icon btn-down">▼</button>

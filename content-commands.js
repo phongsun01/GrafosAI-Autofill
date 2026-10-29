@@ -173,7 +173,14 @@ window.ContentCommands = {
             /secret/i,
             /key/i,
             /auth/i,
-            /credential/i
+            /credential/i,
+            /api[_-]?key/i,
+            /phone|tel|sdt|mobile/i,
+            /email/i,
+            /cccd|cmnd/i,
+            /mst|tax/i,
+            /bank|stk|credit/i,
+            /ssn/i
         ];
 
         // Check if variable name suggests sensitive data

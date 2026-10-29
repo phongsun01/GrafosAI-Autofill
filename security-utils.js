@@ -1,7 +1,7 @@
 // Security Utilities Module - v2.6.0
 // Provides comprehensive input sanitization, validation, and security monitoring
 
-window.SecurityUtils = {
+const SecurityUtils = {
     // Rate limiting state
     _commandTimestamps: [],
     _MAX_COMMANDS_PER_SECOND: 100,
@@ -46,13 +46,8 @@ window.SecurityUtils = {
         }
 
         // Remove dangerous characters that could break out of XPath context
-        // Allow: alphanumeric, spaces, common XPath chars: / @ [ ] ( ) ' " = . - _ : *
-        const sanitized = xpath.replace(/[^\w\s\/\@\[\]\(\)'"=.\-_:*]/g, '');
-
-        // Validate basic XPath structure
-        if (!xpath || typeof xpath !== 'string') {
-            throw new Error('XPath must be a non-empty string');
-        }
+        // Allow: alphanumeric, spaces, Vietnamese/Unicode letters & marks, commas, common XPath chars: / @ [ ] ( ) ' " ` = . - _ : *
+        const sanitized = xpath.replace(/[^\p{L}\p{M}\w\s/@[\]()'"`=.\-_:*,]/gu, '');
 
         const trimmed = sanitized.trim();
 
@@ -73,13 +68,9 @@ window.SecurityUtils = {
 
         for (const pattern of dangerousPatterns) {
             if (pattern.test(trimmed)) {
-                throw new Error(`Dangerous XPath pattern detected: ${pattern.source}`);
+                console.warn(`[Security] Dangerous XPath pattern detected: ${pattern.source}`);
+                return '';
             }
-        }
-
-        // Additional length check
-        if (trimmed.length > 5000) {
-            throw new Error(`XPath too long (${trimmed.length} chars). Maximum: 5000`);
         }
 
         return trimmed;
@@ -199,10 +190,19 @@ window.SecurityUtils = {
      * @returns {string}
      */
     escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        if (text === null || text === undefined) return '';
+        const str = String(text);
+        if (typeof document !== 'undefined') {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     },
 
     /**
@@ -280,7 +280,14 @@ window.SecurityUtils = {
             /token/i,
             /key/i,
             /auth/i,
-            /credential/i
+            /credential/i,
+            /api[_-]?key/i,
+            /phone|tel|sdt|mobile/i,
+            /email/i,
+            /cccd|cmnd/i,
+            /mst|tax/i,
+            /bank|stk|credit/i,
+            /ssn/i
         ];
 
         const name = element.name || '';
@@ -293,4 +300,9 @@ window.SecurityUtils = {
         return SENSITIVE_PATTERNS.some(pattern => pattern.test(checkString));
     }
 };
+
+if (typeof window !== 'undefined') window.SecurityUtils = SecurityUtils;
+if (typeof self !== 'undefined') self.SecurityUtils = SecurityUtils;
+if (typeof globalThis !== 'undefined') globalThis.SecurityUtils = SecurityUtils;
+
 

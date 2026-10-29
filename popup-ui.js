@@ -235,7 +235,7 @@ window.PopupUI = {
             const colName = (rows[1] && rows[1][idx]) ? rows[1][idx] : Utils.columnLetterToIndex(idx) || `Col ${idx}`;
             // Convert index back to Letter for display if needed, but the cell content is what matters.
             // Let's just show the cell content of row[1]
-            thHTML += `<th>${colName}</th>`;
+            thHTML += `<th>${SecurityUtils.escapeHtml(colName)}</th>`;
         });
         this.dom.table.batchHead.innerHTML = thHTML;
 
@@ -255,7 +255,7 @@ window.PopupUI = {
 
             let tds = `<td class="col-cb"><input type="checkbox" class="batch-row-cb" data-row="${r}" ${chk}></td><td class="col-id">${i - 1}</td>`;
             indices.forEach(idx => {
-                tds += `<td class="col-data">${rows[i][idx] || ''}</td>`;
+                tds += `<td class="col-data">${SecurityUtils.escapeHtml(rows[i][idx] || '')}</td>`;
             });
 
             tr.innerHTML = tds;
@@ -294,11 +294,15 @@ window.PopupUI = {
                 }
 
                 const titleText = isSensitive ? '[PROTECTED]' : displayValue;
+                const safeKey = SecurityUtils.escapeHtml(key);
+                const safeDisplayValue = SecurityUtils.escapeHtml(displayValue);
+                const safeTitle = SecurityUtils.escapeHtml(titleText);
+
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td style="font-weight:600; color:var(--primary)">${key}</td>
-                    <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${titleText}">${displayValue}</td>
-                    <td><button class="btn-action btn-del" data-key="${key}">×</button></td>
+                    <td style="font-weight:600; color:var(--primary)">${safeKey}</td>
+                    <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${safeTitle}">${safeDisplayValue}</td>
+                    <td><button class="btn-action btn-del" data-key="${safeKey}">×</button></td>
                 `;
                 row.querySelector('.btn-del').onclick = () => {
                     chrome.runtime.sendMessage({ action: "DELETE_VARIABLE", key: key }, () => {
@@ -330,8 +334,9 @@ window.PopupUI = {
         this.dom.input.profileList.innerHTML = "";
         DataManager.appData.profiles.forEach((p, index) => {
             const div = document.createElement('div'); div.className = `list-item`;
+            const safeName = SecurityUtils.escapeHtml(p.name);
             div.innerHTML = `
-                <span style="font-weight:600;cursor:pointer;flex:1">${p.name}</span>
+                <span style="font-weight:600;cursor:pointer;flex:1">${safeName}</span>
                 <div class="item-actions">
                     <button class="btn-action btn-up">▲</button>
                     <button class="btn-action btn-down">▼</button>
@@ -372,13 +377,14 @@ window.PopupUI = {
         }
 
         macroNames.forEach(name => {
-            const commands = macros[name];
+            const commands = macros[name] || [];
+            const safeMacroName = SecurityUtils.escapeHtml(name);
             const row = tbody.insertRow();
             row.innerHTML = `
-                <td style="padding:8px; border-bottom:1px solid var(--border);">${name}</td>
+                <td style="padding:8px; border-bottom:1px solid var(--border);">${safeMacroName}</td>
                 <td style="padding:8px; border-bottom:1px solid var(--border); text-align:center;">${commands.length} commands</td>
                 <td style="padding:8px; border-bottom:1px solid var(--border); text-align:center;">
-                    <button class="btn-action btn-del" data-macro-name="${name}" style="padding:4px 8px; font-size:10px;">Del</button>
+                    <button class="btn-action btn-del" data-macro-name="${safeMacroName}" style="padding:4px 8px; font-size:10px;">Del</button>
                 </td>
             `;
         });

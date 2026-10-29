@@ -99,7 +99,13 @@ const CryptoUtils = {
             /key/i,
             /auth/i,
             /credential/i,
-            /api[_-]?key/i
+            /api[_-]?key/i,
+            /phone|tel|sdt|mobile/i,
+            /email/i,
+            /cccd|cmnd/i,
+            /mst|tax/i,
+            /bank|stk|credit/i,
+            /ssn/i
         ];
 
         return SENSITIVE_PATTERNS.some(pattern => pattern.test(varName));

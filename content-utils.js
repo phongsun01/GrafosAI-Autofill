@@ -11,6 +11,14 @@ window.ContentUtils = {
             return document.getElementById(xpathStr) || document.getElementsByName(xpathStr)[0];
         }
 
+        if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.sanitizeXPath === 'function') {
+            xpathStr = SecurityUtils.sanitizeXPath(xpathStr);
+            if (!xpathStr) {
+                console.warn('[Security] XPath rejected by sanitizeXPath:', xpath);
+                return null;
+            }
+        }
+
         try {
             return document.evaluate(xpathStr, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
         } catch (e) {

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GrafosAI-Autofill (Background Runner)",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Enterprise-grade form automation with security hardening - Google Sheets integration, macros, and XPath picker",
   "permissions": [
     "activeTab",
